@@ -115,7 +115,7 @@ async def calculator_add(config: AddToolConfig, builder: Builder):
 
     import re
 
-    async def _calculator_subtract(text: str) -> str:
+    async def _calculator_add(text: str) -> str:
         numbers = re.findall(r"\d+", text)
         a = int(numbers[0])
         b = int(numbers[1])
@@ -124,6 +124,6 @@ async def calculator_add(config: AddToolConfig, builder: Builder):
 
     # Create a Generic AIQ Toolkit tool that can be used with any supported LLM framework
     yield FunctionInfo.from_fn(
-        _calculator_subtract,
+        _calculator_add,
         description=("This is a mathematical tool used to add two numbers. "
                      "It takes 2 numbers as an input and computes their numeric sum as the output."))
