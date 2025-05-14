@@ -105,3 +105,25 @@ async def calculator_subtract(config: SubtractToolConfig, builder: Builder):
         _calculator_subtract,
         description=("This is a mathematical tool used to subtract one number from another. "
                      "It takes 2 numbers as an input and computes their numeric difference as the output."))
+
+
+class AddToolConfig(FunctionBaseConfig, name="calculator_add"):
+    pass
+
+@register_function(config_type=AddToolConfig)
+async def calculator_add(config: AddToolConfig, builder: Builder):
+
+    import re
+
+    async def _calculator_subtract(text: str) -> str:
+        numbers = re.findall(r"\d+", text)
+        a = int(numbers[0])
+        b = int(numbers[1])
+
+        return f"The result of {a} + {b} is {a + b}"
+
+    # Create a Generic AIQ Toolkit tool that can be used with any supported LLM framework
+    yield FunctionInfo.from_fn(
+        _calculator_subtract,
+        description=("This is a mathematical tool used to add two numbers. "
+                     "It takes 2 numbers as an input and computes their numeric sum as the output."))

@@ -22,11 +22,13 @@ functions:
   calculator_inequality:
     _type: calculator_inequality
   calculator_divide:
-    _type: aiq_simple_calculator/calculator_divide
+    _type: calculator_divide
   current_datetime:
     _type: current_datetime
   calculator_subtract:
     _type: calculator_subtract
+  calculator_add:
+    _type: calculator_add
 
 llms:
   nim_llm:
@@ -43,6 +45,7 @@ workflow:
     - current_datetime
     - calculator_divide
     - calculator_subtract
+    - calculator_add
   llm_name: nim_llm
   verbose: true
   retry_parsing_errors: true
