@@ -1,0 +1,29 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools >= 64", "setuptools-scm>=8"]
+
+[tool.setuptools_scm]
+root = ".."
+
+[tool.setuptools]
+packages = ["aiq_simple_calculator"]
+
+[project]
+name = "mediation-simulator"
+version = "0.1.0"
+description = "A mediation simulator application"
+authors = [
+    {name = "Brian Caffey", email = "briancaffey2010@gmail.com"}
+]
+dependencies = [
+    "aiqtoolkit",
+    "aiqtoolkit[llama-index]",
+    "aiqtoolkit[langchain]"
+]
+requires-python = ">=3.13"
+
+[project.entry-points.'aiq.components']
+aiq_simple_calculator = "aiq_simple_calculator.register"
+
+[tool.hatch.metadata]
+allow-direct-references = true
