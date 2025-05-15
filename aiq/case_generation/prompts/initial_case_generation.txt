@@ -1,0 +1,27 @@
+The case topic should be a dispute between two parties over a business relationship. Possible
+examples of the case topics could be:
+- High-Tech Partnership Dispute
+- International Supply Contract Issue
+- Intellectual Property Licensing Conflict
+- Family Business Split over inherited business
+- Construction Project Dispute
+
+The case information should include the following:
+- Case Name
+- Requesting and responding parties
+-- Fictional, gender-neutral names of the individuals involved
+-- Fictional names of the organizations involved with fictional country names (DO NOT USE REAL COUNTRY NAMES) and fictional currencies
+-- Background information on the relationship between the parties
+- Case description
+- Related documents
+-- Name of the document
+-- Type of document
+-- filename with a .md extension
+-- Document description
+- Confidential facts for each party (3 to 4 bullet points per party)
+-- Confidential facts for the requesting party
+-- Confidential facts for the responding party
+
+The confidential facts should be unique, interesting, representative of actual business
+scenarios, balanced and should make for an excellent case for use in a law school mediation
+tournament.

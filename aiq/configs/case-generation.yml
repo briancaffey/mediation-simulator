@@ -1,0 +1,25 @@
+general:
+  use_uvloop: true
+  telemetry:
+    enabled: false
+    tracing:
+      phoenix:
+        _type: phoenix
+        endpoint: http://localhost:6006/v1/traces
+        project: default
+
+llms:
+  nim_llm:
+    _type: nim
+    base_url: http://192.168.5.96:1234/v1
+    model_name: qwen3-8b
+    max_tokens: 10000
+    temperature: 0.7
+
+workflow:
+  _type: case_generation
+  # tool_names:
+  #   - document_generation
+  #   - summarization
+  llm_name: nim_llm
+  data_dir: ./data

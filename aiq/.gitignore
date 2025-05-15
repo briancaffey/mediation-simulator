@@ -172,3 +172,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Data files for case generation
+data/*
+!data/.gitkeep

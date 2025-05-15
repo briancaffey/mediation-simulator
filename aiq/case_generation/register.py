@@ -1,0 +1,407 @@
+"""
+This file defines the case_generation workflow.
+
+It creates a description of a case for use in a mediation simulation
+
+"""
+
+
+import logging
+import os
+import random
+import string
+import json
+from pathlib import Path
+from typing import TypedDict, List
+from pydantic import BaseModel, Field
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain.output_parsers import PydanticOutputParser
+
+from aiq.builder.builder import Builder
+from aiq.builder.framework_enum import LLMFrameworkEnum
+from aiq.cli.register_workflow import register_function
+from aiq.data_models.component_ref import FunctionRef
+from aiq.data_models.component_ref import LLMRef
+from aiq.data_models.function import FunctionBaseConfig
+
+logger = logging.getLogger(__name__)
+
+
+class CaseGenerationWorkflowConfig(FunctionBaseConfig, name="case_generation"):
+    # Add your custom configuration parameters here
+    llm: LLMRef = "nim_llm"
+    data_dir: str = "./data"
+
+
+class Document(BaseModel):
+    """A document in the case"""
+    name: str = Field(description="The name of the document")
+    description: str = Field(description="A description of what the document contains")
+    type: str = Field(description="The type of document (e.g. contract, email, report)")
+    filename: str = Field(description="The filename of the document ending with .md")
+
+class DocumentList(BaseModel):
+    """List of documents in the case"""
+    documents: List[Document] = Field(description="List of documents mentioned in the case")
+
+
+@register_function(config_type=CaseGenerationWorkflowConfig, framework_wrappers=[LLMFrameworkEnum.LANGCHAIN])
+async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder: Builder):
+    from langchain_core.messages import BaseMessage
+    from langgraph.graph import StateGraph
+    from langgraph.graph import END
+
+    logger.info("Getting LLM with name: %s", config.llm)
+    llm = await builder.get_llm(llm_name=config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+    logger.info("LLM initialized: %s", llm)
+
+
+    class CaseGenerationState(TypedDict):
+        """"
+        Case generation state
+        """
+        case_id: str | None
+        initial_case_description: str | None
+        basic_case_information: str | None
+        documents: List[dict] | None
+
+    async def initial(state: CaseGenerationState) -> CaseGenerationState:
+        """generate the initial case description"""
+        # If case_id is provided, try to load existing case description
+        if state.get("case_id"):
+            case_dir = Path(config.data_dir) / state["case_id"]
+            case_description_file = case_dir / "initial_case_description.md"
+
+            if case_description_file.exists():
+                logger.info(f"Loading existing case description from {case_description_file}")
+                with open(case_description_file, "r") as f:
+                    return {
+                        "case_id": state["case_id"],
+                        "initial_case_description": f.read(),
+                        "documents": None
+                    }
+
+        # If no existing case found, generate new one
+        messages = [
+            SystemMessage(content="You are a legal case creator that creates descriptions of cases for legal mediation competitions. Your task is to generate information based on the user's request. Your answers should be complete and should address each topic with proper headings."),
+            HumanMessage(content=case_generation_prompt)
+        ]
+
+        # Get response from LLM
+        logger.info("Sending message to LLM...")
+        response = await llm.ainvoke(messages)
+        logger.info("Raw response from LLM: %s", response)
+
+        # Ensure we have content from the response
+        content = response.content if hasattr(response, 'content') else str(response)
+
+        # Update the state with the case description
+        return {
+            "case_id": state.get("case_id"),
+            "initial_case_description": content,
+            "documents": None
+        }
+
+    async def document_extraction(state: CaseGenerationState) -> CaseGenerationState:
+        """Extract structured document information from the case description"""
+        # If case_id is provided, try to load existing documents
+        if state.get("case_id"):
+            case_dir = Path(config.data_dir) / state["case_id"]
+            documents_file = case_dir / "documents.json"
+
+            if documents_file.exists():
+                logger.info(f"Loading existing documents from {documents_file}")
+                with open(documents_file, "r") as f:
+                    return {
+                        "case_id": state["case_id"],
+                        "initial_case_description": state.get("initial_case_description"),
+                        "documents": json.load(f)
+                    }
+
+        if not state.get("initial_case_description"):
+            logger.warning("No initial case description found in state")
+            return {
+                "case_id": state.get("case_id"),
+                "initial_case_description": state.get("initial_case_description"),
+                "documents": []
+            }
+
+        # Create the output parser
+        parser = PydanticOutputParser(pydantic_object=DocumentList)
+
+        # Create messages for the LLM
+        messages = [
+            SystemMessage(content="""You are a document extraction specialist. Your task is to extract information about documents mentioned in the case description.
+            For each document mentioned, extract its name, type, and description.
+            The output should be a JSON object with a 'documents' key containing an array of document objects.
+            Each document object should have 'name', 'type', 'description' and 'filename' fields.
+            The filename field should be unique and generated based on the document name with a .md extension.
+            Only include documents that are explicitly mentioned in the text.
+
+            Example format:
+            {
+              "documents": [
+                {
+                  "name": "Contract Agreement",
+                  "type": "contract",
+                  "description": "The original contract between parties",
+                  "filename": "contract.md"
+                }
+              ]
+            }"""),
+            HumanMessage(content=f"""Extract document information from this case description:
+            {state['initial_case_description']}
+
+            {parser.get_format_instructions()}""")
+        ]
+
+        # Get response from LLM
+        logger.info("Sending document extraction request to LLM...")
+        response = await llm.ainvoke(messages)
+        logger.info("Raw response from LLM: %s", response)
+
+        try:
+            # Pretty print the raw JSON output from LLM
+            try:
+                raw_json = json.loads(response.content)
+                logger.info("LLM's JSON output (pretty printed):\n%s",
+                          json.dumps(raw_json, indent=2))
+
+                # If the LLM returned a list instead of an object with documents key,
+                # wrap it in the expected format
+                if isinstance(raw_json, list):
+                    logger.info("Wrapped list in documents object:\n%s",
+                              json.dumps(raw_json, indent=2))
+            except json.JSONDecodeError:
+                logger.warning("LLM output is not valid JSON:\n%s", response.content)
+                return {
+                    "case_id": state.get("case_id"),
+                    "initial_case_description": state.get("initial_case_description"),
+                    "documents": []
+                }
+
+            # Parse the response into structured data
+            parsed_output = parser.parse(json.dumps(raw_json))
+            documents = [doc.dict() for doc in parsed_output.documents]
+            logger.info("Successfully extracted %d documents", len(documents))
+            return {
+                "case_id": state.get("case_id"),
+                "initial_case_description": state.get("initial_case_description"),
+                "documents": documents
+            }
+        except Exception as e:
+            logger.error("Failed to parse document extraction response: %s", str(e))
+            return {
+                "case_id": state.get("case_id"),
+                "initial_case_description": state.get("initial_case_description"),
+                "documents": []
+            }
+
+    async def document_generation(state: CaseGenerationState) -> CaseGenerationState:
+        """Generate the actual document content for each document in the state"""
+        if not state.get("documents"):
+            logger.warning("No documents found in state")
+            return state
+
+        case_dir = Path(config.data_dir) / state["case_id"]
+        documents_dir = case_dir / "documents"
+        documents_dir.mkdir(parents=True, exist_ok=True)
+
+        for doc in state["documents"]:
+            doc_path = documents_dir / doc["filename"]
+
+            # Skip if document already exists
+            if doc_path.exists():
+                logger.info(f"Document {doc['filename']} already exists, skipping")
+                continue
+
+            # Create messages for the LLM
+            messages = [
+                SystemMessage(content="""You are an expert document creator specializing in legal competition materials.
+                Your task is to create detailed, well-structured documents using proper markdown formatting.
+                Use appropriate headings (H1, H2, H3), lists, tables, and other markdown elements to organize the content.
+                The document should be professional, clear, and suitable for a legal competition.
+                Include all relevant details and maintain a formal tone throughout."""),
+                HumanMessage(content=f"""Create a detailed document for a legal competition with the following information:
+
+                Case Information:
+                {state.get('basic_case_information', '')}
+
+                Information about the document to create:
+                Document Name: {doc['name']}
+                Document Type: {doc['type']}
+                Document Description: {doc['description']}
+
+                Please create a comprehensive document based on the provided document information.
+                The document should be detailed enough to be used in a legal competition.""")
+            ]
+
+            # Get response from LLM
+            logger.info(f"Generating document content for {doc['filename']}...")
+            response = await llm.ainvoke(messages)
+            content = response.content if hasattr(response, 'content') else str(response)
+
+            # Save the document
+            with open(doc_path, "w") as f:
+                f.write(content)
+            logger.info(f"Saved document to {doc_path}")
+
+        return state
+
+    async def basic_case_information_extraction(state: CaseGenerationState) -> CaseGenerationState:
+        """Extract basic case information from the case description"""
+        if not state.get("initial_case_description"):
+            logger.warning("No initial case description found in state")
+            return {
+                "case_id": state.get("case_id"),
+                "initial_case_description": state.get("initial_case_description"),
+                "basic_case_information": None,
+                "documents": state.get("documents")
+            }
+
+        # Create messages for the LLM
+        messages = [
+            SystemMessage(content="""You are a legal case information extraction specialist. Your task is to extract basic, non-confidential information from case descriptions.
+            Focus on extracting:
+            1. A clear, concise case title
+            2. All parties involved in the case
+            3. Background information about the case
+            4. General facts that are known to all parties
+
+            DO NOT include any confidential information or facts that are specific to individual parties.
+            The information should be structured and clear, suitable for use in legal proceedings.
+            Keep the description of each section concise and to the point."""),
+            HumanMessage(content=f"""Extract basic case information from this case description:
+            {state['initial_case_description']}
+
+            Format your response with clear headings for each section:
+            # Case Title
+            [Title]
+
+            # Parties Involved
+            [List of parties]
+
+            # Background
+            [Background information]
+
+            # General Facts
+            [General facts known to all parties]""")
+        ]
+
+        # Get response from LLM
+        logger.info("Sending basic case information extraction request to LLM...")
+        response = await llm.ainvoke(messages)
+        content = response.content if hasattr(response, 'content') else str(response)
+        logger.info("Raw response from LLM: %s", content)
+
+        # Save the basic case information to a markdown file
+        case_dir = Path(config.data_dir) / state["case_id"]
+        case_dir.mkdir(parents=True, exist_ok=True)  # Create directory if it doesn't exist
+        basic_info_file = case_dir / "basic_case_information.md"
+        with open(basic_info_file, "w") as f:
+            f.write(content)
+        logger.info(f"Saved basic case information to {basic_info_file}")
+
+        return {
+            "case_id": state.get("case_id"),
+            "initial_case_description": state.get("initial_case_description"),
+            "basic_case_information": content,
+            "documents": state.get("documents")
+        }
+
+    workflow = StateGraph(CaseGenerationState)
+    workflow.add_node("initial", initial)
+    workflow.set_entry_point("initial")
+    workflow.add_node("document_extraction", document_extraction)
+    workflow.add_node("basic_case_information_extraction", basic_case_information_extraction)
+    workflow.add_node("document_generation", document_generation)
+
+    # Update the edges to create a proper flow
+    workflow.add_edge("initial", "document_extraction")
+    workflow.add_edge("document_extraction", "document_generation")
+    workflow.add_edge("document_generation", "basic_case_information_extraction")
+    workflow.add_edge("basic_case_information_extraction", END)
+
+    app = workflow.compile()
+
+    # Save workflow visualization
+    try:
+        import graphviz
+        dot = graphviz.Digraph(comment='Case Generation Workflow')
+        dot.attr(rankdir='TB')  # Top to bottom layout
+        dot.attr('node', shape='box', style='rounded,filled', fillcolor='#4A90E2', fontcolor='white', fontname='Arial')
+        dot.attr('edge', color='#666666', penwidth='1.5')
+
+        # Define node colors for different types of nodes
+        node_colors = {
+            'initial': '#4A90E2',  # Blue
+            'basic_case_information_extraction': '#50C878',  # Emerald Green
+            'document_extraction': '#FFA500',  # Orange
+            'document_generation': '#9370DB',  # Medium Purple
+            'END': '#FF6B6B'  # Coral Red
+        }
+
+        # Add nodes with custom colors
+        for node in app.get_graph().nodes:
+            color = node_colors.get(node, '#4A90E2')  # Default to blue if node type not specified
+            dot.node(node, node, fillcolor=color)
+
+        # Add edges
+        for edge in app.get_graph().edges:
+            dot.edge(edge[0], edge[1])
+
+        # Save the graph
+        dot.render('case_generation_workflow', format='png', cleanup=True)
+        logger.info("Saved workflow visualization to case_generation_workflow.png")
+    except ImportError:
+        logger.warning("graphviz not installed. Skipping workflow visualization. Install with: pip install graphviz")
+    except Exception as e:
+        logger.error(f"Failed to save workflow visualization: {str(e)}")
+
+    # Read the prompt from file
+    prompt_path = Path(__file__).parent / "prompts" / "initial_case_generation.txt"
+    with open(prompt_path, "r") as f:
+        case_generation_prompt = f.read().strip()
+
+    async def _response_fn(input_message: str = None) -> str:
+        logger.debug("Starting case_generation workflow execution")
+
+        case_id = input_message or ''.join(random.choices(string.ascii_lowercase, k=8))
+        # Initialize the state with the required fields
+        initial_state = {
+            "case_id": case_id,  # Use input_message as case_id
+            "initial_case_description": None,
+            "documents": None
+        }
+
+        out = (await app.ainvoke(initial_state))
+        output = out["initial_case_description"]
+        documents = out.get("documents", [])
+        logger.info("initial_case_description : %s ", output)
+        logger.info("Extracted documents: %s", documents)
+
+        # Create the directory structure
+        case_dir = Path(config.data_dir) / case_id
+        case_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save the case description to a markdown file
+        output_file = case_dir / "initial_case_description.md"
+        with open(output_file, "w") as f:
+            f.write(output)
+
+        # Save the documents to a JSON file
+        documents_file = case_dir / "documents.json"
+        with open(documents_file, "w") as f:
+            json.dump(documents, f, indent=2)
+
+        logger.info(f"Saved case description to {output_file}")
+        logger.info(f"Saved documents to {documents_file}")
+
+        return output
+
+    try:
+        yield _response_fn
+    except GeneratorExit:
+        logger.exception("Exited early!", exc_info=True)
+    finally:
+        logger.debug("Cleaning up case_generation workflow.")

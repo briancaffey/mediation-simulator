@@ -6,7 +6,10 @@ requires = ["setuptools >= 64", "setuptools-scm>=8"]
 root = ".."
 
 [tool.setuptools]
-packages = ["aiq_simple_calculator"]
+packages = [
+    "aiq_simple_calculator",
+    "case_generation"
+]
 
 [project]
 name = "mediation-simulator"
@@ -16,14 +19,18 @@ authors = [
     {name = "Brian Caffey", email = "briancaffey2010@gmail.com"}
 ]
 dependencies = [
+    "pyppeteer",
+    "graphviz",
     "aiqtoolkit",
     "aiqtoolkit[llama-index]",
-    "aiqtoolkit[langchain]"
+    "aiqtoolkit[langchain]",
+    "aiqtoolkit[telemetry]"
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.11,<3.13"
 
 [project.entry-points.'aiq.components']
 aiq_simple_calculator = "aiq_simple_calculator.register"
+case_generation = "case_generation.register"
 
 [tool.hatch.metadata]
 allow-direct-references = true
