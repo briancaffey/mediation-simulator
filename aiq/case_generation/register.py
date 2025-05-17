@@ -318,9 +318,9 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
 
     # Update the edges to create a proper flow
     workflow.add_edge("initial", "document_extraction")
-    workflow.add_edge("document_extraction", "document_generation")
-    workflow.add_edge("document_generation", "basic_case_information_extraction")
-    workflow.add_edge("basic_case_information_extraction", END)
+    workflow.add_edge("document_extraction", "basic_case_information_extraction")
+    workflow.add_edge("basic_case_information_extraction", "document_generation")
+    workflow.add_edge("document_generation", END)
 
     app = workflow.compile()
 
@@ -397,7 +397,46 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         logger.info(f"Saved case description to {output_file}")
         logger.info(f"Saved documents to {documents_file}")
 
-        return output
+        # Write the CaseGenerationState to a YAML file
+        import yaml
+
+        # Add custom representer for strings
+        def str_presenter(dumper, data):
+            if '\n' in data:
+                return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+            return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+
+        yaml.add_representer(str, str_presenter)
+
+        state_file = case_dir / "case_generation_state.yaml"
+
+        # Create a clean state dictionary for YAML serialization
+        state_dict = {
+            "case_id": out.get("case_id"),
+            "initial_case_description": out.get("initial_case_description"),
+            "basic_case_information": out.get("basic_case_information"),
+            "documents": [
+                {
+                    "name": doc.get("name"),
+                    "type": doc.get("type"),
+                    "description": doc.get("description"),
+                    "filename": doc.get("filename")
+                }
+                for doc in (out.get("documents") or [])
+            ]
+        }
+
+        with open(state_file, "w", encoding='utf-8') as f:
+            yaml.dump(
+                state_dict,
+                f,
+                default_flow_style=False,
+                sort_keys=False,
+                allow_unicode=True,  # Allow Unicode characters
+                width=1000  # Prevent line wrapping
+            )
+
+        return out["case_id"]
 
     try:
         yield _response_fn

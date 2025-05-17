@@ -8,7 +8,8 @@ root = ".."
 [tool.setuptools]
 packages = [
     "aiq_simple_calculator",
-    "case_generation"
+    "case_generation",
+    "mediation"
 ]
 
 [project]
@@ -31,6 +32,7 @@ requires-python = ">=3.11,<3.13"
 [project.entry-points.'aiq.components']
 aiq_simple_calculator = "aiq_simple_calculator.register"
 case_generation = "case_generation.register"
+mediation = "mediation.register"
 
 [tool.hatch.metadata]
 allow-direct-references = true

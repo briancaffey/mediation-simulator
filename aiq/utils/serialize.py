@@ -1,0 +1,39 @@
+"""
+Utility functions for serializing Pydantic models and other objects.
+"""
+
+from typing import Any, Dict, List, Union
+from datetime import datetime
+
+def serialize_pydantic(obj: Any) -> Union[Dict, List, str, Any]:
+    """Serialize a Pydantic model or nested structure of Pydantic models to a dictionary.
+
+    Args:
+        obj: The object to serialize. Can be a Pydantic model, dict, list, or primitive type.
+
+    Returns:
+        The serialized object, with Pydantic models converted to dictionaries.
+    """
+    if hasattr(obj, 'model_dump'):
+        # Handle special cases for MediationPhase and Party - return just the name string
+        if hasattr(obj, 'name'):  # For MediationPhase and Party
+            return obj.name
+        # Handle MediationEvent specially
+        elif hasattr(obj, 'event_id'):  # For MediationEvent
+            return {
+                "event_id": obj.event_id,
+                "timestamp": obj.timestamp,
+                "mediation_phase": obj.mediation_phase.name,
+                "speaker": obj.speaker.name,
+                "content": obj.content,
+                "summary": obj.summary,
+                "token_count": obj.token_count
+            }
+        # For other Pydantic models, use model_dump
+        data = obj.model_dump()
+        return data
+    elif isinstance(obj, dict):
+        return {k: serialize_pydantic(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [serialize_pydantic(item) for item in obj]
+    return obj
