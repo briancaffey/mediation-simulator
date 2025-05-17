@@ -24,6 +24,9 @@ from aiq.data_models.component_ref import FunctionRef
 from aiq.data_models.component_ref import LLMRef
 from aiq.data_models.function import FunctionBaseConfig
 
+# Configure logging to suppress warnings from async_otel_listener
+logging.getLogger('aiq.observability.async_otel_listener').setLevel(logging.ERROR)
+
 logger = logging.getLogger(__name__)
 
 
@@ -151,9 +154,9 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         # Configuration for phase transitions
         max_turns_per_phase: Dict[MediationPhase, int] = Field(default_factory=lambda: {
             PHASE_OPENING: 3,
-            PHASE_JOINT_DISCUSSION: 10,
-            PHASE_CAUCUS: 6,
-            PHASE_NEGOTIATION: 15,
+            PHASE_JOINT_DISCUSSION: 4,
+            PHASE_CAUCUS: 2,
+            PHASE_NEGOTIATION: 3,
             PHASE_CONCLUSION: 3,
         })
         turns_in_current_phase: int = 0
@@ -303,10 +306,9 @@ Based on this context, who should speak next? Respond with exactly one of: "MEDI
         if state.turns_in_current_phase >= state.max_turns_per_phase[state.current_phase]:
             # Transition to next phase
             if state.current_phase == PHASE_JOINT_DISCUSSION:
-                # state.current_phase = PHASE_CAUCUS
-                # state.is_in_caucus = True
-                # state.caucus_party = Party(name="REQUESTING_PARTY")
                 state.current_phase = PHASE_CAUCUS
+                state.is_in_caucus = True
+                state.caucus_party = Party(name="REQUESTING_PARTY")
             elif state.current_phase == PHASE_CAUCUS:
                 state.current_phase = PHASE_NEGOTIATION
                 state.is_in_caucus = False
@@ -326,7 +328,12 @@ Based on this context, who should speak next? Respond with exactly one of: "MEDI
 
         # Additional validation for caucus phase
         if state.current_phase == PHASE_CAUCUS:
-            if next_speaker not in ["MEDIATOR", state.caucus_party.name]:
+            if not state.is_in_caucus or not state.caucus_party:
+                # Initialize caucus if not already done
+                state.is_in_caucus = True
+                state.caucus_party = Party(name="REQUESTING_PARTY")
+                next_speaker = "MEDIATOR"  # Start with mediator
+            elif next_speaker not in ["MEDIATOR", state.caucus_party.name]:
                 next_speaker = "MEDIATOR"  # Default to mediator if invalid choice
 
         state.next_speaker_candidate = Party(name=next_speaker)
@@ -660,8 +667,7 @@ Please provide your next response as the responding party. Focus on presenting y
         }[x.next_speaker_candidate.name]
     )
 
-    # Compile the workflow with a higher recursion limit
-    app = workflow.compile(config={"recursion_limit": 1000})  # Set a high recursion limit
+    app = workflow.compile()
 
     # Save workflow visualization
     save_workflow_visualization(app)
@@ -685,7 +691,7 @@ Please provide your next response as the responding party. Focus on presenting y
         )
 
         # Run the workflow
-        output = (await app.ainvoke(initial_state))
+        output = (await app.ainvoke(initial_state, {"recursion_limit": 100}))
 
         # Create the directory structure
         case_dir = Path(config.data_dir) / case_id
