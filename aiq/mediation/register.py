@@ -200,8 +200,88 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
 
         return state
 
-    def clerk_node(state: MediationState):
+    async def generate_clerk_decision(llm, state: MediationState) -> str:
+        """Generate a decision about who should speak next based on the conversation history.
+
+        Args:
+            llm: The language model to use for decision making
+            state: The current mediation state
+
+        Returns:
+            A string indicating who should speak next: "MEDIATOR", "REQUESTING_PARTY", or "RESPONDING_PARTY"
+        """
+        # Create a summary of the conversation history
+        conversation_history = "\n".join([
+            f"{event.speaker.name}: {event.summary}"
+            for event in state.events[-5:]  # Look at last 5 events for context
+        ])
+
+        # Add constraints based on the current phase
+        phase_constraints = {
+            PHASE_JOINT_DISCUSSION: """In joint discussion:
+- The mediator should not speak more than twice in a row
+- After the mediator speaks, a party should speak next
+- Parties should have roughly equal speaking opportunities""",
+            PHASE_CAUCUS: """In caucus:
+- Only the mediator and the party in caucus should speak
+- Alternate between mediator and the party""",
+            PHASE_NEGOTIATION: """In negotiation:
+- The mediator should speak less frequently
+- Parties should negotiate directly with each other
+- The mediator should only speak to guide or clarify""",
+            PHASE_CONCLUSION: """In conclusion:
+- Follow a structured order: mediator → requesting party → responding party → mediator
+- Ensure each party has a chance to make closing remarks"""
+        }
+
+        system_message = SystemMessage(content=f"""You are a mediation clerk responsible for managing the flow of conversation in a legal mediation session.
+Your role is to decide who should speak next based on the conversation history and the current phase of mediation.
+
+Consider the following factors:
+1. The current phase of mediation (opening statements, joint discussion, caucus, negotiation, or conclusion)
+2. Who has spoken recently and what they said
+3. Whether a party needs to respond to a specific point
+4. Whether the mediator needs to guide the conversation
+5. The natural flow of discussion and turn-taking
+
+{phase_constraints.get(state.current_phase, '')}
+
+You must respond with EXACTLY one of these three options:
+- "MEDIATOR"
+- "REQUESTING_PARTY"
+- "RESPONDING_PARTY"
+
+Do not include any other text, explanations, or formatting in your response.""")
+
+        human_message = HumanMessage(content=f"""Current mediation phase: {state.current_phase.name}
+Current turn number: {state.turn_number}
+Turns in current phase: {state.turns_in_current_phase}
+
+Recent conversation history:
+{conversation_history}
+
+Based on this context, who should speak next? Respond with exactly one of: "MEDIATOR", "REQUESTING_PARTY", or "RESPONDING_PARTY".""")
+
+        messages = [system_message, human_message]
+        response = await llm.ainvoke(messages)
+        decision = response.content.strip().upper()
+
+        # Validate the response
+        valid_decisions = {"MEDIATOR", "REQUESTING_PARTY", "RESPONDING_PARTY"}
+        if decision not in valid_decisions:
+            logger.warning(f"Invalid clerk decision: {decision}. Defaulting to MEDIATOR.")
+            decision = "MEDIATOR"
+
+        return decision
+
+    async def clerk_node(state: MediationState):
         """The clerk node decides who speaks next and whether to end the mediation"""
+        logger.info(f"[CLERK]: Current phase: {state.current_phase}, Turn: {state.turn_number}")
+
+        # Check if we should end the mediation
+        if state.current_phase == PHASE_ENDED:
+            return state
+
         # Handle opening phase
         if state.current_phase == PHASE_OPENING:
             # Check opening statements in order: mediator, requesting party, responding party
@@ -218,30 +298,42 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 state.next_speaker_candidate = Party(name="MEDIATOR")  # Mediator typically starts joint discussion
             return state
 
-        # Handle joint discussion phase
-        elif state.current_phase == PHASE_JOINT_DISCUSSION:
-            # TODO: Implement joint discussion phase logic
-            # For now, continue with basic turn rotation
-            pass
+        # For all other phases, use the LLM to decide the next speaker
+        # Check if we've reached max turns for the current phase
+        if state.turns_in_current_phase >= state.max_turns_per_phase[state.current_phase]:
+            # Transition to next phase
+            if state.current_phase == PHASE_JOINT_DISCUSSION:
+                # state.current_phase = PHASE_CAUCUS
+                # state.is_in_caucus = True
+                # state.caucus_party = Party(name="REQUESTING_PARTY")
+                state.current_phase = PHASE_CAUCUS
+            elif state.current_phase == PHASE_CAUCUS:
+                state.current_phase = PHASE_NEGOTIATION
+                state.is_in_caucus = False
+                state.caucus_party = None
+            elif state.current_phase == PHASE_NEGOTIATION:
+                state.current_phase = PHASE_CONCLUSION
+            elif state.current_phase == PHASE_CONCLUSION:
+                state.current_phase = PHASE_ENDED
+                return state
 
-        # For now, we'll end after 3 turns for testing
-        if state.turn_number >= 3:
-            state.current_phase = PHASE_ENDED
+            state.turns_in_current_phase = 0
+            state.next_speaker_candidate = Party(name="MEDIATOR")  # Mediator typically starts new phases
             return state
 
-        # Increment turn counter
-        state.turn_number += 1
+        # Get the next speaker from the LLM
+        next_speaker = await generate_clerk_decision(llm, state)
 
-        # Simple rotation between parties for now
-        # TODO: Implement more sophisticated speaker selection
-        if state.next_speaker_candidate is None:
-            state.next_speaker_candidate = Party(name="MEDIATOR")
-        elif state.next_speaker_candidate.name == "MEDIATOR":
-            state.next_speaker_candidate = Party(name="REQUESTING_PARTY")
-        elif state.next_speaker_candidate.name == "REQUESTING_PARTY":
-            state.next_speaker_candidate = Party(name="RESPONDING_PARTY")
-        else:
-            state.next_speaker_candidate = Party(name="MEDIATOR")
+        # Additional validation for caucus phase
+        if state.current_phase == PHASE_CAUCUS:
+            if next_speaker not in ["MEDIATOR", state.caucus_party.name]:
+                next_speaker = "MEDIATOR"  # Default to mediator if invalid choice
+
+        state.next_speaker_candidate = Party(name=next_speaker)
+
+        # Increment counters
+        state.turns_in_current_phase += 1
+        state.turn_number += 1
 
         return state
 
@@ -312,6 +404,47 @@ Your opening statement should welcome the parties, establish your role as a neut
                 token_count=len(opening_statement.split())  # Rough estimate of tokens
             )
             state.events.append(event)
+        elif state.current_phase == PHASE_JOINT_DISCUSSION:
+            # Create system message for mediator role in joint discussion
+            system_prompt_file = Path(__file__).parent / "prompts" / "mediator_joint_discussion.txt"
+            with open(system_prompt_file, 'r', encoding='utf-8') as f:
+                system_message_content = f.read()
+            system_message = SystemMessage(content=system_message_content)
+
+            # Create a summary of recent events for context
+            recent_events = "\n".join([
+                f"{event.speaker.name}: {event.summary}"
+                for event in state.events[-5:]  # Look at last 5 events for context
+            ])
+
+            # Create human message with conversation context
+            human_message = HumanMessage(content=f"""Here is the case summary:
+{state.case_summary}
+
+Summary of recent conversation:
+{recent_events}
+
+Please provide your next response as the mediator. Focus on guiding the discussion, helping parties understand each other, and moving toward resolution.""")
+
+            # Generate response using LLM
+            messages = [system_message, human_message]
+            response = await llm.ainvoke(messages)
+            response_content = response.content if hasattr(response, 'content') else str(response)
+
+            state.last_utterance_content = response_content
+
+            # Generate summary of the response
+            summary = await generate_summary(llm, response_content, "This is a mediator's response during joint discussion.")
+
+            # Create MediationEvent for the response
+            event = MediationEvent(
+                mediation_phase=state.current_phase,
+                speaker=state.last_utterance_speaker,
+                content=response_content,
+                summary=summary,
+                token_count=len(response_content.split())  # Rough estimate of tokens
+            )
+            state.events.append(event)
         else:
             state.last_utterance_content = f"Mediator speaking on turn {state.turn_number}."
 
@@ -358,6 +491,47 @@ Your opening statement should be professional, constructive, and show openness t
                 content=opening_statement,
                 summary=summary,
                 token_count=len(opening_statement.split())  # Rough estimate of tokens
+            )
+            state.events.append(event)
+        elif state.current_phase == PHASE_JOINT_DISCUSSION:
+            # Create system message for requesting party role in joint discussion
+            system_prompt_file = Path(__file__).parent / "prompts" / "requesting_party_joint_discussion.txt"
+            with open(system_prompt_file, 'r', encoding='utf-8') as f:
+                system_message_content = f.read()
+            system_message = SystemMessage(content=system_message_content)
+
+            # Create a summary of recent events for context
+            recent_events = "\n".join([
+                f"{event.speaker.name}: {event.summary}"
+                for event in state.events[-5:]  # Look at last 5 events for context
+            ])
+
+            # Create human message with conversation context
+            human_message = HumanMessage(content=f"""Here is the case summary:
+{state.case_summary}
+
+Recent conversation:
+{recent_events}
+
+Please provide your next response as the requesting party. Focus on presenting your client's perspective clearly and engaging constructively with the other party.""")
+
+            # Generate response using LLM
+            messages = [system_message, human_message]
+            response = await llm.ainvoke(messages)
+            response_content = response.content if hasattr(response, 'content') else str(response)
+
+            state.last_utterance_content = response_content
+
+            # Generate summary of the response
+            summary = await generate_summary(llm, response_content, "This is a requesting party's response during joint discussion.")
+
+            # Create MediationEvent for the response
+            event = MediationEvent(
+                mediation_phase=state.current_phase,
+                speaker=state.last_utterance_speaker,
+                content=response_content,
+                summary=summary,
+                token_count=len(response_content.split())  # Rough estimate of tokens
             )
             state.events.append(event)
         else:
@@ -412,6 +586,47 @@ You should acknowledge the requesting party's statement while maintaining your o
                 token_count=len(opening_statement.split())  # Rough estimate of tokens
             )
             state.events.append(event)
+        elif state.current_phase == PHASE_JOINT_DISCUSSION:
+            # Create system message for responding party role in joint discussion
+            system_prompt_file = Path(__file__).parent / "prompts" / "responding_party_joint_discussion.txt"
+            with open(system_prompt_file, 'r', encoding='utf-8') as f:
+                system_message_content = f.read()
+            system_message = SystemMessage(content=system_message_content)
+
+            # Create a summary of recent events for context
+            recent_events = "\n".join([
+                f"{event.speaker.name}: {event.summary}"
+                for event in state.events[-5:]  # Look at last 5 events for context
+            ])
+
+            # Create human message with conversation context
+            human_message = HumanMessage(content=f"""Here is the case summary:
+{state.case_summary}
+
+Recent conversation:
+{recent_events}
+
+Please provide your next response as the responding party. Focus on presenting your client's perspective clearly and engaging constructively with the requesting party.""")
+
+            # Generate response using LLM
+            messages = [system_message, human_message]
+            response = await llm.ainvoke(messages)
+            response_content = response.content if hasattr(response, 'content') else str(response)
+
+            state.last_utterance_content = response_content
+
+            # Generate summary of the response
+            summary = await generate_summary(llm, response_content, "This is a responding party's response during joint discussion.")
+
+            # Create MediationEvent for the response
+            event = MediationEvent(
+                mediation_phase=state.current_phase,
+                speaker=state.last_utterance_speaker,
+                content=response_content,
+                summary=summary,
+                token_count=len(response_content.split())  # Rough estimate of tokens
+            )
+            state.events.append(event)
         else:
             state.last_utterance_content = f"Responding party speaking on turn {state.turn_number}."
 
@@ -445,7 +660,8 @@ You should acknowledge the requesting party's statement while maintaining your o
         }[x.next_speaker_candidate.name]
     )
 
-    app = workflow.compile()
+    # Compile the workflow with a higher recursion limit
+    app = workflow.compile(config={"recursion_limit": 1000})  # Set a high recursion limit
 
     # Save workflow visualization
     save_workflow_visualization(app)
