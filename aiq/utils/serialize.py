@@ -21,13 +21,13 @@ def serialize_pydantic(obj: Any) -> Union[Dict, List, str, Any]:
         # Handle MediationEvent specially
         elif hasattr(obj, 'event_id'):  # For MediationEvent
             return {
-                "event_id": obj.event_id,
-                "timestamp": obj.timestamp,
-                "mediation_phase": obj.mediation_phase.name,
-                "speaker": obj.speaker.name,
-                "content": obj.content,
-                "summary": obj.summary,
-                "token_count": obj.token_count
+                "event_id": str(obj.event_id),  # Ensure UUID is converted to string
+                "timestamp": obj.timestamp.isoformat() if isinstance(obj.timestamp, datetime) else str(obj.timestamp),
+                "mediation_phase": obj.mediation_phase.name if hasattr(obj.mediation_phase, 'name') else str(obj.mediation_phase),
+                "speaker": obj.speaker.name if hasattr(obj.speaker, 'name') else str(obj.speaker),
+                "content": str(obj.content),
+                "summary": str(obj.summary),
+                "token_count": int(obj.token_count)
             }
         # For other Pydantic models, use model_dump
         data = obj.model_dump()

@@ -36,6 +36,7 @@ class MediationWorkflowConfig(FunctionBaseConfig, name="mediation"):
 @register_function(config_type=MediationWorkflowConfig, framework_wrappers=[LLMFrameworkEnum.LANGCHAIN])
 async def case_generation_workflow(config: MediationWorkflowConfig, builder: Builder):
     from langchain_core.messages import BaseMessage
+    from langchain_core.runnables import RunnableLambda
     from langgraph.graph import StateGraph
     from langgraph.graph import END
 
@@ -379,7 +380,7 @@ Your opening statement should be professional, constructive, and show openness t
             # Create human message with case context, mediator's opening statement, and requesting party's opening statement
             human_message = HumanMessage(content=f"""Please provide an opening statement for this mediation case:
 
-Here is a case summary:
+Here is the case summary:
 {state.case_summary}
 
 This was the mediator's opening statement:
@@ -388,7 +389,8 @@ This was the mediator's opening statement:
 This was the requesting party's opening statement:
 {state.requesting_party_opening_statement}
 
-Your opening statement should be professional, constructive, and show openness to resolution while presenting your client's perspective clearly and calmly. You should acknowledge the requesting party's statement while maintaining your own position.""")
+Your opening statement should be professional, constructive, and show openness to resolution while presenting your client's perspective clearly and calmly.
+You should acknowledge the requesting party's statement while maintaining your own position.""")
 
             # Generate opening statement using LLM
             messages = [system_message, human_message]
@@ -418,11 +420,11 @@ Your opening statement should be professional, constructive, and show openness t
     workflow = StateGraph(MediationState)
 
     # Add nodes
-    workflow.add_node("initial", initial)
-    workflow.add_node("clerk", clerk_node)
-    workflow.add_node("mediator", mediator_node)
-    workflow.add_node("requesting_party", requesting_party_node)
-    workflow.add_node("responding_party", responding_party_node)
+    workflow.add_node("initial", RunnableLambda(initial))
+    workflow.add_node("clerk", RunnableLambda(clerk_node))
+    workflow.add_node("mediator", RunnableLambda(mediator_node))
+    workflow.add_node("requesting_party", RunnableLambda(requesting_party_node))
+    workflow.add_node("responding_party", RunnableLambda(responding_party_node))
 
     # Set entry point
     workflow.set_entry_point("initial")
@@ -456,7 +458,15 @@ Your opening statement should be professional, constructive, and show openness t
             raise ValueError("Case ID is required, please provide case ID via --input")
 
         # Initialize the state with the required fields
-        initial_state = MediationState(case_id=case_id)
+        initial_state = MediationState(
+            case_id=case_id,
+            events=[],  # Explicitly initialize empty events list
+            case_summary="",  # Initialize empty case summary
+            current_phase=PHASE_OPENING,  # Set initial phase
+            turn_number=0,  # Initialize turn counter
+            total_tokens_spoken=0,  # Initialize token counter
+            turns_in_current_phase=0  # Initialize phase turn counter
+        )
 
         # Run the workflow
         output = (await app.ainvoke(initial_state))
