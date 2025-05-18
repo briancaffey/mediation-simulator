@@ -26,8 +26,9 @@ dependencies = [
     "aiqtoolkit[llama-index]",
     "aiqtoolkit[langchain]",
     "aiqtoolkit[telemetry]",
-    "llama-index-embeddings-huggingface", # TODO remove this and use NIM embeddings
-    "llama-index-vector-stores-milvus"
+    "llama-index-vector-stores-milvus",
+    "llama-index-embeddings-langchain",
+    "langchain-nvidia-ai-endpoints"
 ]
 requires-python = ">=3.11,<3.13"
 

@@ -14,7 +14,7 @@ from llama_index.core import (
     StorageContext,
 )
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
 # Configure logging with more detailed format
@@ -45,8 +45,11 @@ def get_index():
                 f"VECTORDB_SERVICE_PORT={VECTORDB_SERVICE_PORT}")
 
     try:
-        logger.info("Initializing embedding model: BAAI/bge-small-en-v1.5")
-        embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+        logger.info("Initializing embedding model: nvidia/nv-embedqa-e5-v5")
+        embed_model = NVIDIAEmbeddings(
+            base_url="http://192.168.5.96:8000/v1",
+            model="nvidia/nv-embedqa-e5-v5"
+        )
         Settings.embed_model = embed_model
         logger.info("✅ Embedding model initialized successfully")
     except Exception as e:
@@ -60,7 +63,7 @@ def get_index():
     try:
         vector_store = MilvusVectorStore(
             uri=VECTORDB_URI,
-            dim=384,
+            dim=1024,  # Updated dimension for nv-embedqa-e5-v5
             collection_name=MILVUS_COLLECTION_NAME,
             overwrite=True,  # Set to True to recreate the collection
             batch_size=50,   # Add smaller batch size to prevent row count mismatches
@@ -211,7 +214,11 @@ def build_index():
         index = get_index()
 
         logger.info("🔧 Configuring node parser")
-        node_parser = SentenceSplitter(chunk_size=384, chunk_overlap=40)
+        node_parser = SentenceSplitter(
+            chunk_size=150,  # Much smaller chunks to ensure we stay under limit
+            chunk_overlap=10,  # Keep small overlap
+            separator="\n"  # Split on newlines to maintain better context
+        )
         logger.info("✅ Node parser configured")
 
         all_processed_nodes = []
@@ -223,9 +230,21 @@ def build_index():
 
                 temp_nodes_for_this_doc = []
                 for node in nodes_from_doc:
-                    doc_description_for_header = node.metadata.get("document_description", "No description provided.")
+                    # Keep the document description very short
+                    doc_description_for_header = node.metadata.get("document_description", "No description provided.")[:30]
                     original_node_content = node.get_content(metadata_mode="none")
-                    node.text = f"Document Description: {doc_description_for_header}\n\n---\n\n{original_node_content}"
+
+                    # Truncate the content if it's too long (rough estimate: 1 token ≈ 4 characters)
+                    max_chars = 400  # Conservative estimate for 512 tokens
+                    if len(original_node_content) > max_chars:
+                        original_node_content = original_node_content[:max_chars] + "..."
+
+                    # Make the header as short as possible
+                    node.text = f"Doc:{doc_description_for_header}\n{original_node_content}"
+
+                    # Log the length of the text to help debug
+                    logger.info(f"Node text length: {len(node.text)} characters")
+
                     temp_nodes_for_this_doc.append(node)
 
                 all_processed_nodes.extend(temp_nodes_for_this_doc)
@@ -262,8 +281,7 @@ if __name__ == "__main__":
         sys.exit(1)  # Exit with error code
 
     # --- Instructions for running ---
-    # 1. Ensure you have a Python environment with necessary packages:
-    #    pip install llama-index llama-index-embeddings-huggingface llama-index-vector-stores-milvus pymilvus
+    # 1. Ensure you have a Python environment with necessary packages
     #
     # 2. Set up your data directory structure:
     #    aiq/
