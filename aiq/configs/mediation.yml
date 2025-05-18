@@ -7,6 +7,8 @@ general:
         _type: phoenix
         endpoint: http://localhost:6006/v1/traces
         project: default
+  logging:
+    config_file: aiq/configs/logging.yml
 
 llms:
   nim_llm:

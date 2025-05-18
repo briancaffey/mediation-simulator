@@ -5,8 +5,24 @@ It creates a description of a case for use in a mediation simulation
 
 """
 
-
 import logging
+
+class WarningFilter(logging.Filter):
+    def filter(self, record):
+        return not (
+            record.levelname == 'WARNING' and
+            record.name == 'aiq.data_models.discovery_metadata' and
+            'Package metadata not found' in record.getMessage()
+        )
+
+# Configure logging to suppress warnings for specific modules
+root_logger = logging.getLogger()
+root_logger.addFilter(WarningFilter())
+
+logging.getLogger('aiq.cli.commands.start').setLevel(logging.ERROR)
+logging.getLogger('aiq.data_models.discovery_metadata').setLevel(logging.ERROR)
+logging.getLogger('aiq.data_models.discovery_metadata').propagate = False
+
 import os
 import random
 import string
@@ -14,8 +30,6 @@ import json
 from pathlib import Path
 from typing import TypedDict, List
 from pydantic import BaseModel, Field
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain.output_parsers import PydanticOutputParser
 
 from aiq.builder.builder import Builder
 from aiq.builder.framework_enum import LLMFrameworkEnum
@@ -47,13 +61,13 @@ class DocumentList(BaseModel):
 
 @register_function(config_type=CaseGenerationWorkflowConfig, framework_wrappers=[LLMFrameworkEnum.LANGCHAIN])
 async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder: Builder):
-    from langchain_core.messages import BaseMessage
-    from langgraph.graph import StateGraph
-    from langgraph.graph import END
+    from langchain_core.messages import HumanMessage, SystemMessage
+    from langchain.output_parsers import PydanticOutputParser
+    from langgraph.graph import StateGraph, END
 
-    logger.info("Getting LLM with name: %s", config.llm)
+    logger.info("🤖 Getting LLM with name: %s", config.llm)
     llm = await builder.get_llm(llm_name=config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-    logger.info("LLM initialized: %s", llm)
+    logger.info("✅ LLM initialized: %s", llm)
 
 
     class CaseGenerationState(TypedDict):
@@ -88,9 +102,8 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         ]
 
         # Get response from LLM
-        logger.info("Sending message to LLM...")
+        logger.info("💬 Sending request to LLM")
         response = await llm.ainvoke(messages)
-        logger.info("Raw response from LLM: %s", response)
 
         # Ensure we have content from the response
         content = response.content if hasattr(response, 'content') else str(response)
@@ -156,24 +169,14 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         ]
 
         # Get response from LLM
-        logger.info("Sending document extraction request to LLM...")
+        logger.info("📑 Sending document extraction request to LLM")
         response = await llm.ainvoke(messages)
-        logger.info("Raw response from LLM: %s", response)
 
         try:
-            # Pretty print the raw JSON output from LLM
             try:
                 raw_json = json.loads(response.content)
-                logger.info("LLM's JSON output (pretty printed):\n%s",
-                          json.dumps(raw_json, indent=2))
-
-                # If the LLM returned a list instead of an object with documents key,
-                # wrap it in the expected format
-                if isinstance(raw_json, list):
-                    logger.info("Wrapped list in documents object:\n%s",
-                              json.dumps(raw_json, indent=2))
             except json.JSONDecodeError:
-                logger.warning("LLM output is not valid JSON:\n%s", response.content)
+                logger.warning("⚠️ LLM output is not valid JSON:\n%s", response.content)
                 return {
                     "case_id": state.get("case_id"),
                     "initial_case_description": state.get("initial_case_description"),
@@ -183,14 +186,14 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             # Parse the response into structured data
             parsed_output = parser.parse(json.dumps(raw_json))
             documents = [doc.dict() for doc in parsed_output.documents]
-            logger.info("Successfully extracted %d documents", len(documents))
+            logger.info("✅ Successfully extracted %d documents", len(documents))
             return {
                 "case_id": state.get("case_id"),
                 "initial_case_description": state.get("initial_case_description"),
                 "documents": documents
             }
         except Exception as e:
-            logger.error("Failed to parse document extraction response: %s", str(e))
+            logger.error("❌ Failed to parse document extraction response: %s", str(e))
             return {
                 "case_id": state.get("case_id"),
                 "initial_case_description": state.get("initial_case_description"),
@@ -237,14 +240,14 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             ]
 
             # Get response from LLM
-            logger.info(f"Generating document content for {doc['filename']}...")
+            logger.info(f"📄 Generating document content for {doc['filename']}")
             response = await llm.ainvoke(messages)
             content = response.content if hasattr(response, 'content') else str(response)
 
             # Save the document
             with open(doc_path, "w") as f:
                 f.write(content)
-            logger.info(f"Saved document to {doc_path}")
+            logger.info(f"✅ Saved document to {doc_path}")
 
         return state
 
@@ -289,10 +292,9 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         ]
 
         # Get response from LLM
-        logger.info("Sending basic case information extraction request to LLM...")
+        logger.info("📝 Doing basic case information extraction")
         response = await llm.ainvoke(messages)
         content = response.content if hasattr(response, 'content') else str(response)
-        logger.info("Raw response from LLM: %s", content)
 
         # Save the basic case information to a markdown file
         case_dir = Path(config.data_dir) / state["case_id"]
@@ -300,7 +302,7 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         basic_info_file = case_dir / "basic_case_information.md"
         with open(basic_info_file, "w") as f:
             f.write(content)
-        logger.info(f"Saved basic case information to {basic_info_file}")
+        logger.info(f"✅ Saved basic case information to {basic_info_file}")
 
         return {
             "case_id": state.get("case_id"),
@@ -352,11 +354,11 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
 
         # Save the graph
         dot.render('case_generation_workflow', format='png', cleanup=True)
-        logger.info("Saved workflow visualization to case_generation_workflow.png")
+        logger.info("📊 Saved workflow visualization to case_generation_workflow.png")
     except ImportError:
-        logger.warning("graphviz not installed. Skipping workflow visualization. Install with: pip install graphviz")
+        logger.warning("⚠️ graphviz not installed. Skipping workflow visualization. Install with: pip install graphviz")
     except Exception as e:
-        logger.error(f"Failed to save workflow visualization: {str(e)}")
+        logger.error(f"❌ Failed to save workflow visualization: {str(e)}")
 
     # Read the prompt from file
     prompt_path = Path(__file__).parent / "prompts" / "initial_case_generation.txt"
@@ -364,7 +366,7 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         case_generation_prompt = f.read().strip()
 
     async def _response_fn(input_message: str = None) -> str:
-        logger.debug("Starting case_generation workflow execution")
+        logger.debug("🚀 Starting case_generation workflow execution")
 
         case_id = input_message or ''.join(random.choices(string.ascii_lowercase, k=8))
         # Initialize the state with the required fields
@@ -377,8 +379,6 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         out = (await app.ainvoke(initial_state))
         output = out["initial_case_description"]
         documents = out.get("documents", [])
-        logger.info("initial_case_description : %s ", output)
-        logger.info("Extracted documents: %s", documents)
 
         # Create the directory structure
         case_dir = Path(config.data_dir) / case_id
@@ -394,8 +394,8 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         with open(documents_file, "w") as f:
             json.dump(documents, f, indent=2)
 
-        logger.info(f"Saved case description to {output_file}")
-        logger.info(f"Saved documents to {documents_file}")
+        logger.info(f"💾 Saved case description to {output_file}")
+        logger.info(f"💾 Saved documents to {documents_file}")
 
         # Write the CaseGenerationState to a YAML file
         import yaml
@@ -441,6 +441,6 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
     try:
         yield _response_fn
     except GeneratorExit:
-        logger.exception("Exited early!", exc_info=True)
+        logger.exception("❌ Exited early!", exc_info=True)
     finally:
-        logger.debug("Cleaning up case_generation workflow.")
+        logger.debug("🧹 Cleaning up case_generation workflow.")

@@ -2,6 +2,14 @@
 
 import logging
 
+# Configure logging to suppress warnings
+logging.getLogger('aiq.data_models.discovery_metadata').setLevel(logging.ERROR)
+logging.getLogger('aiq.data_models.discovery_metadata').propagate = False
+logging.getLogger('aiq.agent.register').setLevel(logging.ERROR)
+logging.getLogger('aiq.agent.register').propagate = False
+logging.getLogger('aiq.runtime.loader').setLevel(logging.ERROR)
+logging.getLogger('aiq.runtime.loader').propagate = False
+
 from aiq.builder.builder import Builder
 from aiq.builder.function_info import FunctionInfo
 from aiq.cli.register_workflow import register_function

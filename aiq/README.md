@@ -50,5 +50,5 @@ The `--seed` option creates the virtual environment in a specific directory (`.v
 Using a simple calculator tool example:
 
 ```
-aiq run --config_file configs/config.yml --input "what is 4 - 4"
+aiq run --config_file configs/case_generation.yml --input ""
 ```
