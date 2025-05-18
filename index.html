@@ -24,6 +24,39 @@
         .content-display::-webkit-scrollbar-thumb:hover {
             background: rgba(0,0,0,0.5);
         }
+
+        /* Fade transition */
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+
+        /* Staggered card animation */
+        .case-card {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUp 0.3s ease forwards;
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Add delay for each card */
+        .case-card:nth-child(1) { animation-delay: 0.1s; }
+        .case-card:nth-child(2) { animation-delay: 0.2s; }
+        .case-card:nth-child(3) { animation-delay: 0.3s; }
+        .case-card:nth-child(4) { animation-delay: 0.4s; }
+        .case-card:nth-child(5) { animation-delay: 0.5s; }
+        .case-card:nth-child(6) { animation-delay: 0.6s; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -33,9 +66,9 @@
                 <h1 class="text-4xl font-bold text-center text-white py-8">Mediation Simulator</h1>
 
                 <div class="flex justify-center gap-4 pb-6">
-                    <button class="px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors border border-white/20 hover:border-white/30 font-medium backdrop-blur-sm">
+                    <a href="/" class="px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors border border-white/20 hover:border-white/30 font-medium backdrop-blur-sm">
                         All Cases
-                    </button>
+                    </a>
                     <button class="px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors border border-white/20 hover:border-white/30 font-medium backdrop-blur-sm">
                         GitHub
                     </button>
@@ -47,132 +80,152 @@
         </div>
 
         <div class="container mx-auto px-4">
-            <!-- Case List View -->
-            <div v-if="!currentCaseId" class="max-w-7xl mx-auto">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Available Cases</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <a v-for="caseItem in cases" :key="caseItem.id"
-                       :href="`/?case_id=${caseItem.id}`"
-                       class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 block">
-                        <div class="aspect-w-16 aspect-h-9">
-                            <img :src="caseItem.cover_image_url" :alt="caseItem.title"
-                                 class="w-full h-48 object-cover">
-                        </div>
-                        <div class="p-4">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ caseItem.title }}</h3>
-                            <p class="text-sm text-gray-600 mb-3">{{ caseItem.description }}</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-gray-500">{{ caseItem.date }}</span>
-                                <span :class="[
-                                    'px-2 py-1 rounded-full text-xs font-medium',
-                                    caseItem.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                    caseItem.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                                    'bg-yellow-100 text-yellow-800'
-                                ]">{{ caseItem.status }}</span>
+            <transition name="fade" mode="out-in">
+                <!-- Case List View -->
+                <div v-if="!currentCaseId" class="max-w-7xl mx-auto" key="list">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Available Cases</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <a v-for="caseItem in cases" :key="caseItem.id"
+                           :href="`/?case_id=${caseItem.id}`"
+                           class="case-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 block">
+                            <div class="aspect-w-16 aspect-h-9">
+                                <img :src="caseItem.cover_image_url" :alt="caseItem.title"
+                                     class="w-full h-48 object-cover">
                             </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Individual Case View -->
-            <div v-else>
-                <!-- Combined Legend -->
-                <div class="max-w-4xl mx-auto mb-8 bg-white rounded-lg shadow-sm p-4">
-                    <h2 class="text-xs font-semibold text-gray-600 mb-3 text-center uppercase tracking-wide">Mediation Phases & Participants</h2>
-
-                    <!-- Phases -->
-                    <div class="flex flex-wrap justify-center gap-3 mb-3">
-                        <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
-                            <div class="w-3 h-3 border-l-4 border-purple-500"></div>
-                            <span class="text-xs text-gray-600">Opening Statements</span>
-                        </div>
-                        <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
-                            <div class="w-3 h-3 border-l-4 border-sky-500"></div>
-                            <span class="text-xs text-gray-600">Joint Discussion</span>
-                        </div>
-                        <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
-                            <div class="w-3 h-3 border-l-4 border-indigo-500"></div>
-                            <span class="text-xs text-gray-600">Caucuses</span>
-                        </div>
-                        <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
-                            <div class="w-3 h-3 border-l-4 border-teal-500"></div>
-                            <span class="text-xs text-gray-600">Negotiation</span>
-                        </div>
-                        <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
-                            <div class="w-3 h-3 border-l-4 border-pink-500"></div>
-                            <span class="text-xs text-gray-600">Conclusion</span>
-                        </div>
-                    </div>
-
-                    <hr class="my-3 border-gray-200">
-
-                    <!-- Participants -->
-                    <div class="flex flex-wrap justify-center gap-3">
-                        <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
-                            <div class="w-3 h-3 bg-blue-50 border border-blue-200 rounded-sm"></div>
-                            <span class="text-xs text-gray-600">Mediator</span>
-                        </div>
-                        <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
-                            <div class="w-3 h-3 bg-green-50 border border-green-200 rounded-sm"></div>
-                            <span class="text-xs text-gray-600">Requesting Party</span>
-                        </div>
-                        <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
-                            <div class="w-3 h-3 bg-yellow-50 border border-yellow-200 rounded-sm"></div>
-                            <span class="text-xs text-gray-600">Responding Party</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Toggle Switch -->
-                <div class="max-w-4xl mx-auto mb-8 flex items-center justify-center">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" v-model="showFullText" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        <span class="ml-3 text-sm font-medium text-gray-600">{{ showFullText ? 'Showing Full Text' : 'Summary Only' }}</span>
-                    </label>
-                </div>
-
-                <div v-if="loading" class="text-center text-gray-500">
-                    <p>Loading mediation data...</p>
-                </div>
-
-                <div v-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <strong class="font-bold">Error!</strong>
-                    <span class="block sm:inline">{{ error }}</span>
-                </div>
-
-                <div v-if="!loading && !error && events.length === 0" class="text-center text-gray-500">
-                    <p>No events found in the mediation data.</p>
-                </div>
-
-                <div class="space-y-6">
-                    <div v-for="event in events" :key="event.event_id"
-                         :class="['rounded-lg shadow-lg overflow-hidden border-l-8', getCardBorderColor(event.mediation_phase), getCardBackgroundColor(event.speaker)]">
-
-                        <div class="p-5">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <p :class="['font-bold text-xl', getSpeakerTextColor(event.speaker)]">{{ formatName(event.speaker) }}</p>
-                                    <p class="text-xs opacity-80">{{ formatName(event.mediation_phase) }}</p>
+                            <div class="p-4">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ caseItem.title }}</h3>
+                                <p class="text-sm text-gray-600 mb-3">{{ caseItem.description }}</p>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-500">{{ caseItem.date }}</span>
+                                    <span :class="[
+                                        'px-2 py-1 rounded-full text-xs font-medium',
+                                        caseItem.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                        caseItem.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-yellow-100 text-yellow-800'
+                                    ]">{{ caseItem.status }}</span>
                                 </div>
-                                <p class="text-xs opacity-70">{{ formatTimestamp(event.timestamp) }}</p>
                             </div>
+                        </a>
+                    </div>
+                </div>
 
-                            <div class="mt-3 text-sm whitespace-pre-wrap"
-                                 v-show="showFullText"
-                                 v-html="formatContent(event.content)">
+                <!-- Individual Case View -->
+                <div v-else key="detail">
+                    <!-- Case Summary -->
+                    <div v-if="caseSummary" class="max-w-4xl mx-auto mb-8 bg-white rounded-lg shadow">
+                        <button @click="isSummaryExpanded = !isSummaryExpanded"
+                                class="w-full px-6 py-4 flex items-center justify-between text-left transition-colors rounded-lg">
+                            <div class="flex items-center justify-between w-full hover:bg-gray-50 rounded-lg px-2 py-1">
+                                <h2 class="text-lg font-semibold text-gray-700">Case Summary</h2>
+                                <svg class="w-5 h-5 text-gray-500 transform transition-transform"
+                                     :class="{ 'rotate-180': isSummaryExpanded }"
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
                             </div>
+                        </button>
+                        <div v-show="isSummaryExpanded" class="px-6 pb-6">
+                            <div class="prose prose-sm max-w-none" v-html="renderMarkdown(caseSummary)"></div>
+                        </div>
+                    </div>
 
-                            <div v-if="event.summary" class="mt-4 pt-3 border-t border-opacity-20">
-                                <p class="text-xs font-semibold opacity-80 mb-1">Summary:</p>
-                                <p class="text-xs opacity-90 italic">{{ event.summary }}</p>
+                    <!-- Combined Legend -->
+                    <div class="max-w-4xl mx-auto mb-8 bg-white rounded-lg shadow-sm p-4">
+                        <h2 class="text-xs font-semibold text-gray-600 mb-3 text-center uppercase tracking-wide">Mediation Phases & Participants</h2>
+
+                        <!-- Phases -->
+                        <div class="flex flex-wrap justify-center gap-3 mb-3">
+                            <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
+                                <div class="w-3 h-3 border-l-4 border-purple-500"></div>
+                                <span class="text-xs text-gray-600">Opening Statements</span>
                             </div>
-                            <p class="text-xs opacity-60 mt-3 text-right">Token count: {{ event.token_count }}</p>
+                            <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
+                                <div class="w-3 h-3 border-l-4 border-sky-500"></div>
+                                <span class="text-xs text-gray-600">Joint Discussion</span>
+                            </div>
+                            <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
+                                <div class="w-3 h-3 border-l-4 border-indigo-500"></div>
+                                <span class="text-xs text-gray-600">Caucuses</span>
+                            </div>
+                            <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
+                                <div class="w-3 h-3 border-l-4 border-teal-500"></div>
+                                <span class="text-xs text-gray-600">Negotiation</span>
+                            </div>
+                            <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
+                                <div class="w-3 h-3 border-l-4 border-pink-500"></div>
+                                <span class="text-xs text-gray-600">Conclusion</span>
+                            </div>
+                        </div>
+
+                        <hr class="my-3 border-gray-200">
+
+                        <!-- Participants -->
+                        <div class="flex flex-wrap justify-center gap-3">
+                            <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
+                                <div class="w-3 h-3 bg-blue-50 border border-blue-200 rounded-sm"></div>
+                                <span class="text-xs text-gray-600">Mediator</span>
+                            </div>
+                            <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
+                                <div class="w-3 h-3 bg-green-50 border border-green-200 rounded-sm"></div>
+                                <span class="text-xs text-gray-600">Requesting Party</span>
+                            </div>
+                            <div class="flex items-center space-x-1.5 px-2 py-1 bg-gray-50 rounded-md">
+                                <div class="w-3 h-3 bg-yellow-50 border border-yellow-200 rounded-sm"></div>
+                                <span class="text-xs text-gray-600">Responding Party</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Toggle Switch -->
+                    <div class="max-w-4xl mx-auto mb-8 flex items-center justify-center">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" v-model="showFullText" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-600">{{ showFullText ? 'Showing Full Text' : 'Summary Only' }}</span>
+                        </label>
+                    </div>
+
+                    <div v-if="loading" class="text-center text-gray-500">
+                        <p>Loading mediation data...</p>
+                    </div>
+
+                    <div v-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                        <strong class="font-bold">Error!</strong>
+                        <span class="block sm:inline">{{ error }}</span>
+                    </div>
+
+                    <div v-if="!loading && !error && events.length === 0" class="text-center text-gray-500">
+                        <p>No events found in the mediation data.</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div v-for="event in events" :key="event.event_id"
+                             :class="['rounded-lg shadow-lg overflow-hidden border-l-8', getCardBorderColor(event.mediation_phase), getCardBackgroundColor(event.speaker)]">
+
+                            <div class="p-5">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <p :class="['font-bold text-xl', getSpeakerTextColor(event.speaker)]">{{ formatName(event.speaker) }}</p>
+                                        <p class="text-xs opacity-80">{{ formatName(event.mediation_phase) }}</p>
+                                    </div>
+                                    <p class="text-xs opacity-70">{{ formatTimestamp(event.timestamp) }}</p>
+                                </div>
+
+                                <div class="mt-3 text-sm whitespace-pre-wrap"
+                                     v-show="showFullText"
+                                     v-html="formatContent(event.content)">
+                                </div>
+
+                                <div v-if="event.summary" class="mt-4 pt-3 border-t border-opacity-20">
+                                    <p class="text-xs font-semibold opacity-80 mb-1">Summary:</p>
+                                    <p class="text-xs opacity-90 italic">{{ event.summary }}</p>
+                                </div>
+                                <p class="text-xs opacity-60 mt-3 text-right">Token count: {{ event.token_count }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </transition>
         </div>
     </div>
 
