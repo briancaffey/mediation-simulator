@@ -23,3 +23,11 @@ python -m http.server 8083
 ```
 
 Visit [http://[::]:8083/](http://[::]:8083/)
+
+## Milvus with docker compose
+
+Milvus is used for indexing case documents and for parties to retrieve relevant documents during mediation.
+
+```
+docker compose -f docker-compose.milvus.yml up
+```
