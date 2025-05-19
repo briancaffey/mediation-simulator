@@ -9,8 +9,8 @@ examples of the case topics could be:
 The case information should include the following:
 - Case Name
 - Requesting and responding parties
--- Fictional, gender-neutral names of the individuals involved
--- Fictional names of the organizations involved with fictional country names (DO NOT USE REAL COUNTRY NAMES) and fictional currencies
+-- Fictional names of the organizations involved with fictional country names (DO NOT USE REAL COUNTRY NAMES) and fictional currencies for those fictional countries
+-- One business representative for each company with a gender-neutral names of the individuals involved and their title at the company
 -- Background information on the relationship between the parties
 - Case description
 - Related documents

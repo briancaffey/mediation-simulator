@@ -95,6 +95,11 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
                         "documents": None
                     }
 
+        # Read the prompt from file
+        prompt_path = Path(__file__).parent / "prompts" / "initial_case_generation.txt"
+        with open(prompt_path, "r") as f:
+            case_generation_prompt = f.read().strip()
+
         # If no existing case found, generate new one
         messages = [
             SystemMessage(content="You are a legal case creator that creates descriptions of cases for legal mediation competitions. Your task is to generate information based on the user's request. Your answers should be complete and should address each topic with proper headings."),
@@ -149,9 +154,12 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             The output should be a JSON object with a 'documents' key containing an array of document objects.
             Each document object should have 'name', 'type', 'description' and 'filename' fields.
             The filename field should be unique and generated based on the document name with a .md extension.
-            Only include documents that are explicitly mentioned in the text.
+            ONLY include a valid JSON structure that contains the documents that are explicitly mentioned in the text.
+            The first character of your response must be '{', and the last character of your response must be '}'. Do not include any other text, markdown formatting, or explanations.
 
             Example format:
+
+
             {
               "documents": [
                 {
@@ -359,11 +367,6 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         logger.warning("⚠️ graphviz not installed. Skipping workflow visualization. Install with: pip install graphviz")
     except Exception as e:
         logger.error(f"❌ Failed to save workflow visualization: {str(e)}")
-
-    # Read the prompt from file
-    prompt_path = Path(__file__).parent / "prompts" / "initial_case_generation.txt"
-    with open(prompt_path, "r") as f:
-        case_generation_prompt = f.read().strip()
 
     async def _response_fn(input_message: str = None) -> str:
         logger.debug("🚀 Starting case_generation workflow execution")
