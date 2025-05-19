@@ -29,7 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Define constants for storage configuration
-MILVUS_COLLECTION_NAME = "aiq_case_documents"
+MILVUS_COLLECTION_NAME = "mediation_simulator_case_documents"
 
 def get_index():
     """
@@ -67,6 +67,8 @@ def get_index():
             collection_name=MILVUS_COLLECTION_NAME,
             overwrite=True,  # Set to True to recreate the collection
             batch_size=50,   # Add smaller batch size to prevent row count mismatches
+            embedding_field="vector",
+            metric_type="IP"  # Set metric type to Inner Product
         )
         logger.info("✅ Successfully created MilvusVectorStore instance")
 

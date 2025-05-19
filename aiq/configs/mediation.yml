@@ -7,8 +7,29 @@ general:
         _type: phoenix
         endpoint: http://localhost:6006/v1/traces
         project: default
-  logging:
-    config_file: aiq/configs/logging.yml
+
+retrievers:
+  milvus_retriever:
+    _type: milvus_retriever
+    uri: "http://localhost:19530"
+    embedding_model: "nv-embedqa-e5-v5"
+    collection_name: "aiq_case_documents"
+    vector_field: "embedding"
+    search_params:
+      metric_type: "IP" # works best with nv-embedqa-e5-v5
+
+functions:
+  case_document_retriever:
+    _type: mediation/case_document_retriever
+    retriever: milvus_retriever
+    collection_name: "mediation_simulator_case_documents"
+    top_k: 5
+
+embedders:
+  nv-embedqa-e5-v5:
+    _type: nim
+    base_url: http://192.168.5.96:8000/v1
+    model_name: nvidia/nv-embedqa-e5-v5
 
 llms:
   nim_llm:

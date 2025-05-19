@@ -7,16 +7,11 @@ It creates a description of a case for use in a mediation simulation
 
 
 import logging
-import os
-import random
-import string
-import json
 from pathlib import Path
 
 from aiq.builder.builder import Builder
 from aiq.builder.framework_enum import LLMFrameworkEnum
 from aiq.cli.register_workflow import register_function
-from aiq.data_models.component_ref import FunctionRef
 from aiq.data_models.component_ref import LLMRef
 from aiq.data_models.function import FunctionBaseConfig
 
@@ -25,6 +20,8 @@ logging.getLogger('aiq.observability.async_otel_listener').setLevel(logging.ERRO
 
 logger = logging.getLogger(__name__)
 
+# import the case_document_retriever function so that is is registered with aiq toolkit
+from . import case_document_retriever # noqa: F401, pylint: disable=unused-import
 
 class MediationWorkflowConfig(FunctionBaseConfig, name="mediation"):
     # Add your custom configuration parameters here
@@ -54,6 +51,8 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     from .prompts.responding import generate_opening_statement as generate_responding_opening_statement, generate_joint_discussion_response as generate_responding_joint_discussion
     from .prompts.mediator import generate_opening_statement as generate_mediator_opening_statement, generate_joint_discussion_response as generate_mediator_joint_discussion
     from .prompts.requesting import generate_opening_statement as generate_requesting_opening_statement, generate_joint_discussion_response as generate_requesting_joint_discussion
+
+    retriever_fn = builder.get_function("case_document_retriever")
 
     logger.info("🤖 Getting LLM with name: %s", config.llm)
     llm = await builder.get_llm(llm_name=config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
@@ -148,12 +147,13 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         caucus_party: Optional[Party] = None
 
         # Configuration for phase transitions
+        # TODO: increase phase length. Temporarily using shortened phases for debugging
         max_turns_per_phase: Dict[MediationPhase, int] = Field(default_factory=lambda: {
             PHASE_OPENING: 3,
-            PHASE_JOINT_DISCUSSION: 4,
+            PHASE_JOINT_DISCUSSION: 3,
             PHASE_CAUCUS: 2,
-            PHASE_NEGOTIATION: 3,
-            PHASE_CONCLUSION: 3,
+            PHASE_NEGOTIATION: 1,
+            PHASE_CONCLUSION: 1,
         })
         turns_in_current_phase: int = 0
 
@@ -179,7 +179,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 return event
             return None
 
-    def initial(state: MediationState):
+    async def initial(state: MediationState):
         """Load the parts of the case data from data_dir based on the case_id that is passed in"""
         case_dir = Path(config.data_dir) / state.case_id
         if not case_dir.exists():
@@ -196,6 +196,20 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
 
         # Set the case summary from the basic case information
         state.case_summary = case_data.get('basic_case_information', '')
+
+        # # Test the retriever
+        # logger.info("🔍 Testing document retriever...")
+        # logger.info("🔍 Calling retriever function...")
+        # # Use the initialized function to retrieve documents
+        # results = await retriever_fn.acall_invoke(case_id=state.case_id, question="when does the term of the agreement begin?")
+
+        # logger.info("📚 Retriever results:")
+        # for doc in results:
+        #     logger.info(f"Document: {doc['content'][:200]}...")  # Log first 200 chars of each result
+        #     logger.info(f"Metadata: {doc['metadata']}")
+        #     logger.info("---")
+
+        # assert False
 
         return state
 
@@ -228,10 +242,11 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         if state.turns_in_current_phase >= state.max_turns_per_phase[state.current_phase]:
             # Transition to next phase
             if state.current_phase == PHASE_JOINT_DISCUSSION:
-                state.current_phase = PHASE_CAUCUS
-                state.is_in_caucus = True
-                state.caucus_party = Party(name="REQUESTING_PARTY")
-            elif state.current_phase == PHASE_CAUCUS:
+            # Temporary: skip caucus phase
+            #     state.current_phase = PHASE_CAUCUS
+            #     state.is_in_caucus = True
+            #     state.caucus_party = Party(name="REQUESTING_PARTY")
+            # elif state.current_phase == PHASE_CAUCUS:
                 state.current_phase = PHASE_NEGOTIATION
                 state.is_in_caucus = False
                 state.caucus_party = None
@@ -396,7 +411,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     save_workflow_visualization(app)
 
     async def _response_fn(input_message: str = None) -> str:
-        logger.debug("Starting mediation workflow execution")
+        logger.debug("🟢 Starting mediation workflow execution")
 
         case_id = input_message
         if not case_id:
