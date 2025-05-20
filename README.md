@@ -2,6 +2,7 @@
 
 Mediation Simulator helps develop your mediation skills, powered by NVIDIA Agent Intelligence Toolkit. This project is my submission for the NVIDIA Agent Intelligence Toolkit Hackathon.
 
+![p](/flux/data/1747700517310.png)
 
 ## Case Generation
 
