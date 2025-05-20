@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.0](https://github.com/briancaffey/mediation-simulator/compare/v1.0.0...v1.1.0) (2025-05-20)
+
+
+### Features
+
+* **aiq:** update aiq to v1.1.0 for ReWOO and mcp support ([c76cd79](https://github.com/briancaffey/mediation-simulator/commit/c76cd79d2c13dedaac6f8a1c911e3fa6076a268c))
+* **dia:** add dia script for tts generation ([66e9f6e](https://github.com/briancaffey/mediation-simulator/commit/66e9f6ed9a6792b054a177c67c7104c8b6751150))
+* **flux:** add a script to generate stock mediation images with local flux nim ([a1ac8d7](https://github.com/briancaffey/mediation-simulator/commit/a1ac8d7699599de028f4a7705111842388c28ef2))
+* **milvus:** add basic miluvs setup for document indexing ([836f995](https://github.com/briancaffey/mediation-simulator/commit/836f9951db6728168ca4e2cadf43e9303ca0ee1e))
+* **retriever:** add retriever function for looking up document information ([325654a](https://github.com/briancaffey/mediation-simulator/commit/325654a82d6ea72b0cd71f4b007eaed358cf9ad2))
+
+
+### Bug Fixes
+
+* **prompts:** fix small issues with prompts ([97a7d55](https://github.com/briancaffey/mediation-simulator/commit/97a7d55c84c6d7df1659a4663fd274d01b61e917))
+
 ## 1.0.0 (2025-05-18)
 
 
