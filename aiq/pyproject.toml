@@ -28,7 +28,8 @@ dependencies = [
     "aiqtoolkit[telemetry]",
     "llama-index-vector-stores-milvus",
     "llama-index-embeddings-langchain",
-    "langchain-nvidia-ai-endpoints"
+    "langchain-nvidia-ai-endpoints",
+    "soundfile"
 ]
 requires-python = ">=3.11,<3.13"
 

@@ -3,3 +3,5 @@ volumes/
 
 # Generated images
 flux/data/*.png
+
+.DS_Store
