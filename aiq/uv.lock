@@ -149,7 +149,7 @@ wheels = [
 
 [[package]]
 name = "aiqtoolkit"
-version = "1.1.0rc3"
+version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioboto3" },
@@ -176,7 +176,7 @@ dependencies = [
     { name = "wikipedia" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/6b/7cb54502f42f574b89f4dd3b5cbfbd1a5bc31138ba012a3e087784316573/aiqtoolkit-1.1.0rc3-py3-none-any.whl", hash = "sha256:0523eab1e57208d2c9f27033deb37326ac807d1e6182e52c553b0ce2ba1cd3b4", size = 495717 },
+    { url = "https://files.pythonhosted.org/packages/91/ec/db249911052e3676a7ddcf56dc536e7522ca0de3c5e3b13b15edcbe50617/aiqtoolkit-1.1.0-py3-none-any.whl", hash = "sha256:b349ed9c69b96673c4603868c4b6e1f6f4421c1199fb63a412d37f1fd90d1d67", size = 498091 },
 ]
 
 [package.optional-dependencies]
@@ -194,7 +194,7 @@ telemetry = [
 
 [[package]]
 name = "aiqtoolkit-langchain"
-version = "1.1.0rc3"
+version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiqtoolkit" },
@@ -205,12 +205,12 @@ dependencies = [
     { name = "langgraph" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/99/982dedb4fe8b3594c7867e8cc72bb43cb72be21bf7a142253118e0710abf/aiqtoolkit_langchain-1.1.0rc3-py3-none-any.whl", hash = "sha256:91a034a8ca8fc63414d93ffcbbda512b2a7e15ec9d2eb448f4daa79979e902e7", size = 11753 },
+    { url = "https://files.pythonhosted.org/packages/5d/26/6b03bd85fd2f9a794e570254764db4620058a88c2aab1e3be3ff2705312b/aiqtoolkit_langchain-1.1.0-py3-none-any.whl", hash = "sha256:10633dabbbdc13164774ca19b6cfdc13055e7f461ac7ae7ef08f34eb56877c5a", size = 11720 },
 ]
 
 [[package]]
 name = "aiqtoolkit-llama-index"
-version = "1.1.0rc3"
+version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiqtoolkit" },
@@ -221,7 +221,7 @@ dependencies = [
     { name = "llama-index-readers-file" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7d/7a/7f07092c049951e4a11e917caa108cfb70175a862c1ec346db6c12aedc70/aiqtoolkit_llama_index-1.1.0rc3-py3-none-any.whl", hash = "sha256:b3eb5574e930986cc4a05d16c9dd5284bc575a8b28a5dc0721ba674782269047", size = 5761 },
+    { url = "https://files.pythonhosted.org/packages/ab/9c/c001fbfdd20ea3cf0f22a66a8e9f77e2ed4dd259e222c6b55add8574590e/aiqtoolkit_llama_index-1.1.0-py3-none-any.whl", hash = "sha256:6b1491e8aa0740503760957f4a259cf73d0ad1418d846593c1314d025e0c5895", size = 5721 },
 ]
 
 [[package]]
@@ -1253,7 +1253,7 @@ wheels = [
 
 [[package]]
 name = "llama-index"
-version = "0.12.15"
+version = "0.12.21"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "llama-index-agent-openai" },
@@ -1269,9 +1269,9 @@ dependencies = [
     { name = "llama-index-readers-llama-parse" },
     { name = "nltk" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4f/6d/d5532bef94050f333f9d080e47b7e85ad0642a9017085391083f64998e82/llama_index-0.12.15.tar.gz", hash = "sha256:2d77c3264d624776e8dace51397c296ae438f3f0be5abf83f07100930a4d5329", size = 7787 }
+sdist = { url = "https://files.pythonhosted.org/packages/36/c7/de7dfa75b22825e9711011691c4c3689de831404783a51e8e1dd61408e82/llama_index-0.12.21.tar.gz", hash = "sha256:8ca52e6d9eb988b9761604297b5f78afacd27e66b8e6984968e052e4867fecab", size = 7885 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/7e/bde9060ca09d8511edfc22c8956bda56e8ac9e861bba4db98dd3fada0e58/llama_index-0.12.15-py3-none-any.whl", hash = "sha256:badb0da25dc0a8e2d7c34734378c3f5d88a96b6eb7ffb2c6935bbe7ca33f6f22", size = 6881 },
+    { url = "https://files.pythonhosted.org/packages/91/fa/beef517b61d1ed13a95b1b1f5c34f67a8dbb8828d104415139adc8b2f604/llama_index-0.12.21-py3-none-any.whl", hash = "sha256:860ebe29ceb55220fb3d15555d723fe3a2071b5b5fd6c687b5c8d407002c1098", size = 6985 },
 ]
 
 [[package]]
@@ -1304,7 +1304,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.15"
+version = "0.12.21"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1331,9 +1331,9 @@ dependencies = [
     { name = "wrapt", version = "1.16.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'darwin'" },
     { name = "wrapt", version = "1.17.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'darwin'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b7/10/dbf64106540e3eb3324243f547f049529b26c4050a6aa52516751cd4a907/llama_index_core-0.12.15.tar.gz", hash = "sha256:f9aaeef792db24d490b1e3484d2bbd1b3c43e7a24a40fd6dbd1b298efb1f9429", size = 1345748 }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/af/f42e7490b26441321ab47902efb3fb67e3f478b5977af85e231269d795ff/llama_index_core-0.12.21.tar.gz", hash = "sha256:bd51521197231b767e90394f1df9e8869016cfeb9bbe6599fa56a3c32ddd8ccc", size = 1350306 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ef/5e/e98c2381a3181e01152d3f3d843a1c922c168e245b74c19941aa3eddbe97/llama_index_core-0.12.15-py3-none-any.whl", hash = "sha256:0c65ca72c4fb43a77a2463f2114d6eb570681d729139879ed659179798ecab7f", size = 1602211 },
+    { url = "https://files.pythonhosted.org/packages/eb/ca/529269fa3803feb0fff7f998ff7952e064973bb7f322533d8733d53fd884/llama_index_core-0.12.21-py3-none-any.whl", hash = "sha256:8583c781263a883f91c5575d533a5c3c1c27f923ee8913741e1598052370495a", size = 1606328 },
 ]
 
 [[package]]
@@ -1626,19 +1626,21 @@ dependencies = [
     { name = "llama-index-embeddings-langchain" },
     { name = "llama-index-vector-stores-milvus" },
     { name = "pyppeteer" },
+    { name = "soundfile" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "aiqtoolkit" },
-    { name = "aiqtoolkit", extras = ["langchain"] },
-    { name = "aiqtoolkit", extras = ["llama-index"] },
-    { name = "aiqtoolkit", extras = ["telemetry"] },
+    { name = "aiqtoolkit", specifier = "==1.1.0" },
+    { name = "aiqtoolkit", extras = ["langchain"], specifier = "==1.1.0" },
+    { name = "aiqtoolkit", extras = ["llama-index"], specifier = "==1.1.0" },
+    { name = "aiqtoolkit", extras = ["telemetry"], specifier = "==1.1.0" },
     { name = "graphviz" },
     { name = "langchain-nvidia-ai-endpoints" },
     { name = "llama-index-embeddings-langchain" },
     { name = "llama-index-vector-stores-milvus" },
     { name = "pyppeteer" },
+    { name = "soundfile" },
 ]
 
 [[package]]
@@ -2626,6 +2628,25 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a2/87/a6771e1546d97e7e041b6ae58d80074f81b7d5121207425c964ddf5cfdbd/sniffio-1.3.1.tar.gz", hash = "sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc", size = 20372 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl", hash = "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2", size = 10235 },
+]
+
+[[package]]
+name = "soundfile"
+version = "0.13.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cffi" },
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e1/41/9b873a8c055582859b239be17902a85339bec6a30ad162f98c9b0288a2cc/soundfile-0.13.1.tar.gz", hash = "sha256:b2c68dab1e30297317080a5b43df57e302584c49e2942defdde0acccc53f0e5b", size = 46156 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/64/28/e2a36573ccbcf3d57c00626a21fe51989380636e821b341d36ccca0c1c3a/soundfile-0.13.1-py2.py3-none-any.whl", hash = "sha256:a23c717560da2cf4c7b5ae1142514e0fd82d6bbd9dfc93a50423447142f2c445", size = 25751 },
+    { url = "https://files.pythonhosted.org/packages/ea/ab/73e97a5b3cc46bba7ff8650a1504348fa1863a6f9d57d7001c6b67c5f20e/soundfile-0.13.1-py2.py3-none-macosx_10_9_x86_64.whl", hash = "sha256:82dc664d19831933fe59adad199bf3945ad06d84bc111a5b4c0d3089a5b9ec33", size = 1142250 },
+    { url = "https://files.pythonhosted.org/packages/a0/e5/58fd1a8d7b26fc113af244f966ee3aecf03cb9293cb935daaddc1e455e18/soundfile-0.13.1-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:743f12c12c4054921e15736c6be09ac26b3b3d603aef6fd69f9dde68748f2593", size = 1101406 },
+    { url = "https://files.pythonhosted.org/packages/58/ae/c0e4a53d77cf6e9a04179535766b3321b0b9ced5f70522e4caf9329f0046/soundfile-0.13.1-py2.py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:9c9e855f5a4d06ce4213f31918653ab7de0c5a8d8107cd2427e44b42df547deb", size = 1235729 },
+    { url = "https://files.pythonhosted.org/packages/57/5e/70bdd9579b35003a489fc850b5047beeda26328053ebadc1fb60f320f7db/soundfile-0.13.1-py2.py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:03267c4e493315294834a0870f31dbb3b28a95561b80b134f0bd3cf2d5f0e618", size = 1313646 },
+    { url = "https://files.pythonhosted.org/packages/fe/df/8c11dc4dfceda14e3003bb81a0d0edcaaf0796dd7b4f826ea3e532146bba/soundfile-0.13.1-py2.py3-none-win32.whl", hash = "sha256:c734564fab7c5ddf8e9be5bf70bab68042cd17e9c214c06e365e20d64f9a69d5", size = 899881 },
+    { url = "https://files.pythonhosted.org/packages/14/e9/6b761de83277f2f02ded7e7ea6f07828ec78e4b229b80e4ca55dd205b9dc/soundfile-0.13.1-py2.py3-none-win_amd64.whl", hash = "sha256:1e70a05a0626524a69e9f0f4dd2ec174b4e9567f4d8b6c11d38b5c289be36ee9", size = 1019162 },
 ]
 
 [[package]]
