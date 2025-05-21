@@ -58,6 +58,14 @@ class DocumentList(BaseModel):
     """List of documents in the case"""
     documents: List[Document] = Field(description="List of documents mentioned in the case")
 
+class CaseDetails(BaseModel):
+    """Structured case details extracted from the case description"""
+    case_title: str = Field(description="The title of the case")
+    requesting_party_company: str = Field(description="The name of the requesting party's company")
+    requesting_party_representative: str = Field(description="The name of the requesting party's representative")
+    responding_party_company: str = Field(description="The name of the responding party's company")
+    responding_party_representative: str = Field(description="The name of the responding party's representative")
+
 
 @register_function(config_type=CaseGenerationWorkflowConfig, framework_wrappers=[LLMFrameworkEnum.LANGCHAIN])
 async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder: Builder):
@@ -78,6 +86,11 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         initial_case_description: str | None
         basic_case_information: str | None
         documents: List[dict] | None
+        case_title: str = Field(description="The title of the case")
+        requesting_party_company: str = Field(description="The name of the requesting party's company")
+        requesting_party_representative: str = Field(description="The name of the requesting party's representative")
+        responding_party_company: str = Field(description="The name of the responding party's company")
+        responding_party_representative: str = Field(description="The name of the responding party's representative")
 
     async def initial(state: CaseGenerationState) -> CaseGenerationState:
         """generate the initial case description"""
@@ -319,18 +332,74 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             "documents": state.get("documents")
         }
 
+    async def case_details_extraction(state: CaseGenerationState) -> CaseGenerationState:
+        """Extract structured case details from the basic case information"""
+        if not state.get("basic_case_information"):
+            logger.warning("No basic case information found in state")
+            return state
+
+        # Create the output parser
+        parser = PydanticOutputParser(pydantic_object=CaseDetails)
+
+        # Create messages for the LLM
+        messages = [
+            SystemMessage(content="""You are a case details extraction specialist. Your task is to extract specific case details from the provided case information.
+            Extract the following information:
+                - case title
+                - requesting party company name
+                - requesting party representative name (the name of the individual at the company who is representing the requesting party)
+                - responding party company name
+                - responding party representative name (the name of the individual at the company who is representing the responding party)
+
+            The first character of your response must be '{', and the last character of your response must be '}'.
+            Do not include any other text, markdown formatting, or explanations.
+            Only return valid JSON that matches the required schema."""),
+            HumanMessage(content=f"""Extract case details from this case information:
+            {state['initial_case_description']}
+
+            {parser.get_format_instructions()}""")
+        ]
+
+        # Get response from LLM
+        logger.info("📋 Extracting case details")
+        response = await llm.ainvoke(messages)
+        try:
+            # Parse the response into structured data
+            parsed_output = parser.parse(response.content.strip())
+            case_details = parsed_output.dict()
+
+            # Save the case details to a JSON file
+            case_dir = Path(config.data_dir) / state["case_id"]
+            case_details_file = case_dir / "case_details.json"
+            with open(case_details_file, "w") as f:
+                json.dump(case_details, f, indent=2)
+            logger.info(f"✅ Saved case details to {case_details_file}")
+
+            ret_state = {
+                **state,
+                **case_details
+            }
+
+            return ret_state
+        except Exception as e:
+            logger.error("❌ Failed to parse case details: %s", str(e))
+            return state
+
+
     workflow = StateGraph(CaseGenerationState)
     workflow.add_node("initial", initial)
     workflow.set_entry_point("initial")
     workflow.add_node("document_extraction", document_extraction)
     workflow.add_node("basic_case_information_extraction", basic_case_information_extraction)
     workflow.add_node("document_generation", document_generation)
+    workflow.add_node("case_details_extraction", case_details_extraction)
 
     # Update the edges to create a proper flow
     workflow.add_edge("initial", "document_extraction")
     workflow.add_edge("document_extraction", "basic_case_information_extraction")
     workflow.add_edge("basic_case_information_extraction", "document_generation")
-    workflow.add_edge("document_generation", END)
+    workflow.add_edge("document_generation", "case_details_extraction")
+    workflow.add_edge("case_details_extraction", END)
 
     app = workflow.compile()
 
@@ -418,6 +487,11 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             "case_id": out.get("case_id"),
             "initial_case_description": out.get("initial_case_description"),
             "basic_case_information": out.get("basic_case_information"),
+            "case_title": out.get("case_title"),
+            "requesting_party_company": out.get("requesting_party_company"),
+            "requesting_party_representative": out.get("requesting_party_representative"),
+            "responding_party_company": out.get("responding_party_company"),
+            "responding_party_representative": out.get("responding_party_representative"),
             "documents": [
                 {
                     "name": doc.get("name"),
