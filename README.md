@@ -38,3 +38,10 @@ docker compose -f docker-compose.milvus.yml up
 ```
 python flux/main.py
 ```
+
+
+## Generate all_cases.yml for website
+
+```
+python aiq/generate_case_list_data.py
+```

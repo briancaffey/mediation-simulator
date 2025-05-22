@@ -52,16 +52,19 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         generate_opening_statement as generate_responding_opening_statement,
         generate_joint_discussion_response as generate_responding_joint_discussion,
         generate_negotiation_responding_party as generate_negotiation_responding_party,
+        generate_conclusion_responding_party as generate_conclusion_responding_party,
     )
     from .prompts.mediator import (
         generate_opening_statement as generate_mediator_opening_statement,
         generate_joint_discussion_response as generate_mediator_joint_discussion,
         generate_negotiation_mediator as generate_negotiation_mediator,
+        generate_mediator_conclusion as generate_mediator_conclusion,
     )
     from .prompts.requesting import (
         generate_opening_statement as generate_requesting_opening_statement,
         generate_joint_discussion_response as generate_requesting_joint_discussion,
         generate_negotiation_requesting_party as generate_negotiation_requesting_party,
+        generate_conclusion_requesting_party as generate_conclusion_requesting_party,
     )
 
     logger.info("🤖 Getting LLM with name: %s", config.llm)
@@ -138,7 +141,16 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
 
         # case state
         case_id: str = Field(default_factory=lambda: "case-" + str(uuid.uuid4())[:8])
+        case_title: str = ""
         case_summary: str = ""
+
+        # company names
+        requesting_party_company: str = ""
+        requesting_party_representative: str = ""
+        responding_party_company: str = ""
+        responding_party_representative: str = ""
+
+        # confidential info
         requesting_party_confidential_info: str = ""
         responding_party_confidential_info: str = ""
 
@@ -168,10 +180,10 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         max_turns_per_phase: Dict[MediationPhase, int] = Field(
             default_factory=lambda: {
                 PHASE_OPENING: 3,
-                PHASE_JOINT_DISCUSSION: 3,
+                PHASE_JOINT_DISCUSSION: 5,
                 PHASE_CAUCUS: 2,
-                PHASE_NEGOTIATION: 1,
-                PHASE_CONCLUSION: 1,
+                PHASE_NEGOTIATION: 5,
+                PHASE_CONCLUSION: 3,
             }
         )
         turns_in_current_phase: int = 0
@@ -216,6 +228,13 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
 
         # Set the case summary from the basic case information
         state.case_summary = case_data.get("basic_case_information", "")
+        state.case_title = case_data.get("case_title", "")
+
+        # Set the company names
+        state.requesting_party_company = case_data.get("requesting_party_company", "")
+        state.requesting_party_representative = case_data.get("requesting_party_representative", "")
+        state.responding_party_company = case_data.get("responding_party_company", "")
+        state.responding_party_representative = case_data.get("responding_party_representative", "")
 
         return state
 
@@ -317,6 +336,16 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             summary = await generate_summary(
                 llm, content, "This is a mediator's response during joint discussion."
             )
+        elif state.current_phase == PHASE_NEGOTIATION:
+            content = await generate_negotiation_mediator(llm, state)
+            summary = await generate_summary(
+                llm, content, "This is a mediator's response during negotiation."
+            )
+        elif state.current_phase == PHASE_CONCLUSION:
+            content = await generate_mediator_conclusion(llm, state)
+            summary = await generate_summary(
+                llm, content, "This is a mediator's response during conclusion."
+            )
         else:
             content = f"Mediator speaking on turn {state.turn_number}."
             summary = await generate_summary(
@@ -370,6 +399,11 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 content,
                 "This is a requesting party's response during negotiation.",
             )
+        elif state.current_phase == PHASE_CONCLUSION:
+            content = await generate_conclusion_requesting_party(llm, state)
+            summary = await generate_summary(
+                llm, content, "This is a requesting party's response during conclusion."
+            )
         else:
             content = f"Requesting party speaking on turn {state.turn_number}."
             summary = await generate_summary(
@@ -412,6 +446,20 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 llm,
                 content,
                 "This is a responding party's response during joint discussion.",
+            )
+        elif state.current_phase == PHASE_NEGOTIATION:
+            content = await generate_negotiation_responding_party(llm, state)
+            summary = await generate_summary(
+                llm,
+                content,
+                "This is a responding party's response during negotiation.",
+            )
+        elif state.current_phase == PHASE_CONCLUSION:
+            content = await generate_conclusion_responding_party(llm, state)
+            summary = await generate_summary(
+                llm,
+                content,
+                "This is a responding party's response during conclusion.",
             )
         else:
             content = f"Responding party speaking on turn {state.turn_number}."

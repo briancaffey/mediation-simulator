@@ -113,3 +113,44 @@ Please provide your next response as the mediator. Focus on guiding the negotiat
     messages = [system_message, human_message]
     response = await llm.ainvoke(messages)
     return response.content if hasattr(response, "content") else str(response)
+
+# mediator conclusion
+async def generate_mediator_conclusion(llm, state) -> str:
+    """Generate a response for the mediator during the conclusion phase.
+
+    Args:
+        llm: The language model to use for generation
+        state: The current mediation state containing case summary and conversation history
+
+    Returns:
+        The generated response
+    """
+    # Load the system prompt from file
+    system_prompt_file = Path(__file__).parent / "mediator_conclusion.txt"
+    with open(system_prompt_file, "r", encoding="utf-8") as f:
+        system_message_content = f.read()
+    system_message = SystemMessage(content=system_message_content)
+
+    # Create a summary of recent events for context
+    recent_events = "\n".join(
+        [
+            f"{event.speaker.name}: {event.summary}"
+            for event in state.events[-5:]  # Look at last 5 events for context
+        ]
+    )
+
+    # Create human message with conversation context
+    human_message = HumanMessage(
+        content=f"""Here is the case summary:
+{state.case_summary}
+
+Summary of recent conversation:
+{recent_events}
+
+Please provide your concluding remarks as the mediator. Focus on summarizing key points, formalizing any agreements reached, and providing clear next steps for the parties."""
+    )
+
+    # Generate response using LLM
+    messages = [system_message, human_message]
+    response = await llm.ainvoke(messages)
+    return response.content if hasattr(response, "content") else str(response)

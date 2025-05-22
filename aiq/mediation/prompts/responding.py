@@ -123,3 +123,46 @@ Please provide your next response as the responding party during the negotiation
     messages = [system_message, human_message]
     response = await llm.ainvoke(messages)
     return response.content if hasattr(response, "content") else str(response)
+
+
+async def generate_conclusion_responding_party(llm, state) -> str:
+    """Generate a conclusion response for the responding party.
+
+    Args:
+        llm: The language model to use for generation
+        state: The current mediation state containing case summary and conversation history
+
+    Returns:
+        The generated conclusion response
+    """
+    # Load the system prompt from file
+    system_prompt_file = Path(__file__).parent / "responding_party_conclusion.txt"
+    with open(system_prompt_file, "r", encoding="utf-8") as f:
+        system_message_content = f.read()
+    system_message = SystemMessage(content=system_message_content)
+
+    # Create a summary of recent events for context
+    recent_events = "\n".join(
+        [
+            f"{event.speaker.name}: {event.summary}"
+            for event in state.events[-5:]  # Look at last 5 events for context
+        ]
+    )
+
+    # Create human message with conversation context
+    human_message = HumanMessage(
+        content=f"""Here is the case summary:
+{state.case_summary}
+
+Recent conversation:
+{recent_events}
+
+Please provide your concluding remarks as the responding party. Focus on acknowledging any agreements reached, expressing appreciation for the process, and confirming your understanding of next steps."""
+    )
+
+    # Generate response using LLM
+    messages = [system_message, human_message]
+    response = await llm.ainvoke(messages)
+    return response.content if hasattr(response, "content") else str(response)
+
+
