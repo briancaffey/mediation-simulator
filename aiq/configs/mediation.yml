@@ -18,19 +18,6 @@ retrievers:
     search_params:
       metric_type: "IP" # works best with nv-embedqa-e5-v5
 
-functions:
-  case_document_retriever:
-    _type: mediation/case_document_retriever
-    retriever: milvus_retriever
-    collection_name: "mediation_simulator_case_documents"
-    top_k: 5
-
-embedders:
-  nv-embedqa-e5-v5:
-    _type: nim
-    base_url: http://192.168.5.96:8000/v1
-    model_name: nvidia/nv-embedqa-e5-v5
-
 llms:
   nim_llm:
     _type: nim
@@ -38,6 +25,27 @@ llms:
     model_name: qwen3-8b
     max_tokens: 10000
     temperature: 0.7
+
+functions:
+  case_document_rag:
+    _type: case_document_rag
+    retriever: milvus_retriever
+    llm_name: nim_llm
+    collection_name: "mediation_simulator_case_documents"
+    top_k: 5
+  case_query_agent:
+    _type: case_query_agent
+    llm_name: nim_llm
+    tool_names:
+      - case_document_rag
+    verbose: true
+    max_iterations: 3
+
+embedders:
+  nv-embedqa-e5-v5:
+    _type: nim
+    base_url: http://192.168.5.96:8000/v1
+    model_name: nvidia/nv-embedqa-e5-v5
 
 workflow:
   _type: mediation

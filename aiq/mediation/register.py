@@ -1,10 +1,9 @@
 """
-This file defines the case_generation workflow.
+This file defines the mediation tools and workflows.
 
 It creates a description of a case for use in a mediation simulation
 
 """
-
 
 import logging
 from pathlib import Path
@@ -16,12 +15,10 @@ from aiq.data_models.component_ref import LLMRef
 from aiq.data_models.function import FunctionBaseConfig
 
 # Configure logging to suppress warnings from async_otel_listener
-logging.getLogger('aiq.observability.async_otel_listener').setLevel(logging.ERROR)
+logging.getLogger("aiq.observability.async_otel_listener").setLevel(logging.ERROR)
 
 logger = logging.getLogger(__name__)
 
-# import the case_document_retriever function so that is is registered with aiq toolkit
-from . import case_document_retriever # noqa: F401, pylint: disable=unused-import
 
 class MediationWorkflowConfig(FunctionBaseConfig, name="mediation"):
     # Add your custom configuration parameters here
@@ -29,7 +26,9 @@ class MediationWorkflowConfig(FunctionBaseConfig, name="mediation"):
     data_dir: str = "./data"
 
 
-@register_function(config_type=MediationWorkflowConfig, framework_wrappers=[LLMFrameworkEnum.LANGCHAIN])
+@register_function(
+    config_type=MediationWorkflowConfig, framework_wrappers=[LLMFrameworkEnum.LANGCHAIN]
+)
 async def case_generation_workflow(config: MediationWorkflowConfig, builder: Builder):
     from langchain_core.messages import BaseMessage, SystemMessage
     from langchain_core.runnables import RunnableLambda
@@ -42,40 +41,54 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
 
     from langchain_core.messages import BaseMessage, HumanMessage
     import sys
+
     sys.path.append(str(Path(__file__).parent.parent))
     from utils.graphviz import save_workflow_visualization
     from utils.serialize import serialize_pydantic
     from utils.yaml import save_state_to_yaml
     from .prompts.prompts import generate_summary
     from .prompts.clerk import generate_clerk_decision
-    from .prompts.responding import generate_opening_statement as generate_responding_opening_statement, generate_joint_discussion_response as generate_responding_joint_discussion
-    from .prompts.mediator import generate_opening_statement as generate_mediator_opening_statement, generate_joint_discussion_response as generate_mediator_joint_discussion
-    from .prompts.requesting import generate_opening_statement as generate_requesting_opening_statement, generate_joint_discussion_response as generate_requesting_joint_discussion
-
-    retriever_fn = builder.get_function("case_document_retriever")
+    from .prompts.responding import (
+        generate_opening_statement as generate_responding_opening_statement,
+        generate_joint_discussion_response as generate_responding_joint_discussion,
+    )
+    from .prompts.mediator import (
+        generate_opening_statement as generate_mediator_opening_statement,
+        generate_joint_discussion_response as generate_mediator_joint_discussion,
+    )
+    from .prompts.requesting import (
+        generate_opening_statement as generate_requesting_opening_statement,
+        generate_joint_discussion_response as generate_requesting_joint_discussion,
+    )
 
     logger.info("🤖 Getting LLM with name: %s", config.llm)
-    llm = await builder.get_llm(llm_name=config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+    llm = await builder.get_llm(
+        llm_name=config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN
+    )
     # use separate LLMs to simulate LLMs representing each party
     # TODO: move these to tool configuration
     # requesting_party_llm = await builder.get_llm(llm_name=config.requesting_party_llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
     # responding_party_llm = await builder.get_llm(llm_name=config.responding_party_llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
     logger.info("✅ LLM initialized: %s", llm)
 
-    class Party(BaseModel): # Using BaseModel to allow future extension if needed
-        name: Literal["MEDIATOR", "REQUESTING_PARTY", "RESPONDING_PARTY", "CLERK_SYSTEM"]
+    # Get the case query agent
+    case_query_agent = builder.get_function("case_query_agent")
+
+    class Party(BaseModel):  # Using BaseModel to allow future extension if needed
+        name: Literal[
+            "MEDIATOR", "REQUESTING_PARTY", "RESPONDING_PARTY", "CLERK_SYSTEM"
+        ]
 
         def __str__(self):
             return self.name
 
-        def __hash__(self): # Make it hashable for dict keys if needed
+        def __hash__(self):  # Make it hashable for dict keys if needed
             return hash(self.name)
 
         def __eq__(self, other):
             if isinstance(other, Party):
                 return self.name == other.name
             return False
-
 
     class MediationPhase(BaseModel):
         name: Literal[
@@ -84,8 +97,9 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             "CAUCUSES",
             "NEGOTIATION_BARGAINING",
             "CONCLUSION_CLOSING_STATEMENTS",
-            "ENDED" # Terminal phase
+            "ENDED",  # Terminal phase
         ]
+
         def __str__(self):
             return self.name
 
@@ -114,7 +128,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         speaker: Party
         content: str
         summary: str
-        token_count: int = 0 # Placeholder for now
+        token_count: int = 0  # Placeholder for now
 
     class MediationState(BaseModel):
         """State for the mediation workflow"""
@@ -148,13 +162,15 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
 
         # Configuration for phase transitions
         # TODO: increase phase length. Temporarily using shortened phases for debugging
-        max_turns_per_phase: Dict[MediationPhase, int] = Field(default_factory=lambda: {
-            PHASE_OPENING: 3,
-            PHASE_JOINT_DISCUSSION: 3,
-            PHASE_CAUCUS: 2,
-            PHASE_NEGOTIATION: 1,
-            PHASE_CONCLUSION: 1,
-        })
+        max_turns_per_phase: Dict[MediationPhase, int] = Field(
+            default_factory=lambda: {
+                PHASE_OPENING: 3,
+                PHASE_JOINT_DISCUSSION: 3,
+                PHASE_CAUCUS: 2,
+                PHASE_NEGOTIATION: 1,
+                PHASE_CONCLUSION: 1,
+            }
+        )
         turns_in_current_phase: int = 0
 
         agreement_reached: Optional[bool] = None
@@ -191,31 +207,20 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             raise ValueError(f"Case file {case_file} does not exist")
 
         import yaml
-        with open(case_file, 'r', encoding='utf-8') as f:
+
+        with open(case_file, "r", encoding="utf-8") as f:
             case_data = yaml.safe_load(f)
 
         # Set the case summary from the basic case information
-        state.case_summary = case_data.get('basic_case_information', '')
-
-        # # Test the retriever
-        # logger.info("🔍 Testing document retriever...")
-        # logger.info("🔍 Calling retriever function...")
-        # # Use the initialized function to retrieve documents
-        # results = await retriever_fn.acall_invoke(case_id=state.case_id, question="when does the term of the agreement begin?")
-
-        # logger.info("📚 Retriever results:")
-        # for doc in results:
-        #     logger.info(f"Document: {doc['content'][:200]}...")  # Log first 200 chars of each result
-        #     logger.info(f"Metadata: {doc['metadata']}")
-        #     logger.info("---")
-
-        # assert False
+        state.case_summary = case_data.get("basic_case_information", "")
 
         return state
 
     async def clerk_node(state: MediationState):
         """The clerk node decides who speaks next and whether to end the mediation"""
-        logger.info(f"👤 [CLERK]: Current phase: {state.current_phase}, Turn: {state.turn_number}")
+        logger.info(
+            f"👤 [CLERK]: Current phase: {state.current_phase}, Turn: {state.turn_number}"
+        )
 
         # Check if we should end the mediation
         if state.current_phase == PHASE_ENDED:
@@ -234,19 +239,24 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 # All opening statements are complete, transition to joint discussion
                 state.current_phase = PHASE_JOINT_DISCUSSION
                 state.turns_in_current_phase = 0
-                state.next_speaker_candidate = Party(name="MEDIATOR")  # Mediator typically starts joint discussion
+                state.next_speaker_candidate = Party(
+                    name="MEDIATOR"
+                )  # Mediator typically starts joint discussion
             return state
 
         # For all other phases, use the LLM to decide the next speaker
         # Check if we've reached max turns for the current phase
-        if state.turns_in_current_phase >= state.max_turns_per_phase[state.current_phase]:
+        if (
+            state.turns_in_current_phase
+            >= state.max_turns_per_phase[state.current_phase]
+        ):
             # Transition to next phase
             if state.current_phase == PHASE_JOINT_DISCUSSION:
-            # Temporary: skip caucus phase
-            #     state.current_phase = PHASE_CAUCUS
-            #     state.is_in_caucus = True
-            #     state.caucus_party = Party(name="REQUESTING_PARTY")
-            # elif state.current_phase == PHASE_CAUCUS:
+                # Temporary: skip caucus phase
+                #     state.current_phase = PHASE_CAUCUS
+                #     state.is_in_caucus = True
+                #     state.caucus_party = Party(name="REQUESTING_PARTY")
+                # elif state.current_phase == PHASE_CAUCUS:
                 state.current_phase = PHASE_NEGOTIATION
                 state.is_in_caucus = False
                 state.caucus_party = None
@@ -257,7 +267,9 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 return state
 
             state.turns_in_current_phase = 0
-            state.next_speaker_candidate = Party(name="MEDIATOR")  # Mediator typically starts new phases
+            state.next_speaker_candidate = Party(
+                name="MEDIATOR"
+            )  # Mediator typically starts new phases
             return state
 
         # Get the next speaker from the LLM
@@ -286,18 +298,27 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         logger.info("⚖️ [MEDIATOR]: Mediator node called")
         state.last_utterance_speaker = Party(name="MEDIATOR")
 
-        if state.current_phase == PHASE_OPENING and not state.mediator_opening_statement:
+        if (
+            state.current_phase == PHASE_OPENING
+            and not state.mediator_opening_statement
+        ):
             # Generate opening statement using the new function
             content = await generate_mediator_opening_statement(llm, state)
             state.mediator_opening_statement = content
-            summary = await generate_summary(llm, content, "This is a mediator's opening statement.")
+            summary = await generate_summary(
+                llm, content, "This is a mediator's opening statement."
+            )
         elif state.current_phase == PHASE_JOINT_DISCUSSION:
             # Generate response using the new function
             content = await generate_mediator_joint_discussion(llm, state)
-            summary = await generate_summary(llm, content, "This is a mediator's response during joint discussion.")
+            summary = await generate_summary(
+                llm, content, "This is a mediator's response during joint discussion."
+            )
         else:
             content = f"Mediator speaking on turn {state.turn_number}."
-            summary = await generate_summary(llm, content, "This is a mediator's default response.")
+            summary = await generate_summary(
+                llm, content, "This is a mediator's default response."
+            )
 
         # Update state and create event
         state.last_utterance_content = content
@@ -307,7 +328,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             speaker=state.last_utterance_speaker,
             content=content,
             summary=summary,
-            token_count=len(content.split())  # Rough estimate of tokens
+            token_count=len(content.split()),  # Rough estimate of tokens
         )
         state.events.append(event)
 
@@ -318,18 +339,39 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         logger.info("🌝 Requesting party node called")
         state.last_utterance_speaker = Party(name="REQUESTING_PARTY")
 
-        if state.current_phase == PHASE_OPENING and not state.requesting_party_opening_statement:
-            # Generate opening statement using the new function
+        if (
+            state.current_phase == PHASE_OPENING
+            and not state.requesting_party_opening_statement
+        ):
+            # Get case information using the case query agent
+            # content = await case_query_agent.acall_invoke(
+            #     query="What was the result of the independent inspection?"
+            # )
             content = await generate_requesting_opening_statement(llm, state)
             state.requesting_party_opening_statement = content
-            summary = await generate_summary(llm, content, "This is a requesting party's opening statement.")
+            summary = await generate_summary(
+                llm, content, "This is a requesting party's opening statement."
+            )
         elif state.current_phase == PHASE_JOINT_DISCUSSION:
             # Generate response using the new function
             content = await generate_requesting_joint_discussion(llm, state)
-            summary = await generate_summary(llm, content, "This is a requesting party's response during joint discussion.")
+            summary = await generate_summary(
+                llm,
+                content,
+                "This is a requesting party's response during joint discussion.",
+            )
+        elif state.current_phase == PHASE_NEGOTIATION:
+            content = await generate_negotiation_requesting_party(llm, state)
+            summary = await generate_summary(
+                llm,
+                content,
+                "This is a requesting party's response during negotiation.",
+            )
         else:
             content = f"Requesting party speaking on turn {state.turn_number}."
-            summary = await generate_summary(llm, content, "This is a requesting party's default response.")
+            summary = await generate_summary(
+                llm, content, "This is a requesting party's default response."
+            )
 
         # Update state and create event
         state.last_utterance_content = content
@@ -339,7 +381,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             speaker=state.last_utterance_speaker,
             content=content,
             summary=summary,
-            token_count=len(content.split())  # Rough estimate of tokens
+            token_count=len(content.split()),  # Rough estimate of tokens
         )
         state.events.append(event)
 
@@ -350,18 +392,29 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         logger.info("🌚 Responding party node called")
         state.last_utterance_speaker = Party(name="RESPONDING_PARTY")
 
-        if state.current_phase == PHASE_OPENING and not state.responding_party_opening_statement:
+        if (
+            state.current_phase == PHASE_OPENING
+            and not state.responding_party_opening_statement
+        ):
             # Generate opening statement using the new function
             content = await generate_responding_opening_statement(llm, state)
             state.responding_party_opening_statement = content
-            summary = await generate_summary(llm, content, "This is a responding party's opening statement.")
+            summary = await generate_summary(
+                llm, content, "This is a responding party's opening statement."
+            )
         elif state.current_phase == PHASE_JOINT_DISCUSSION:
             # Generate response using the new function
             content = await generate_responding_joint_discussion(llm, state)
-            summary = await generate_summary(llm, content, "This is a responding party's response during joint discussion.")
+            summary = await generate_summary(
+                llm,
+                content,
+                "This is a responding party's response during joint discussion.",
+            )
         else:
             content = f"Responding party speaking on turn {state.turn_number}."
-            summary = await generate_summary(llm, content, "This is a responding party's default response.")
+            summary = await generate_summary(
+                llm, content, "This is a responding party's default response."
+            )
 
         # Update state and create event
         state.last_utterance_content = content
@@ -371,7 +424,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             speaker=state.last_utterance_speaker,
             content=content,
             summary=summary,
-            token_count=len(content.split())  # Rough estimate of tokens
+            token_count=len(content.split()),  # Rough estimate of tokens
         )
         state.events.append(event)
 
@@ -398,11 +451,15 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     # Add conditional edge from clerk
     workflow.add_conditional_edges(
         "clerk",
-        lambda x: "end" if x.current_phase == PHASE_ENDED else {
-            "MEDIATOR": "mediator",
-            "REQUESTING_PARTY": "requesting_party",
-            "RESPONDING_PARTY": "responding_party"
-        }[x.next_speaker_candidate.name]
+        lambda x: (
+            "end"
+            if x.current_phase == PHASE_ENDED
+            else {
+                "MEDIATOR": "mediator",
+                "REQUESTING_PARTY": "requesting_party",
+                "RESPONDING_PARTY": "responding_party",
+            }[x.next_speaker_candidate.name]
+        ),
     )
 
     app = workflow.compile()
@@ -425,11 +482,11 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             current_phase=PHASE_OPENING,  # Set initial phase
             turn_number=0,  # Initialize turn counter
             total_tokens_spoken=0,  # Initialize token counter
-            turns_in_current_phase=0  # Initialize phase turn counter
+            turns_in_current_phase=0,  # Initialize phase turn counter
         )
 
         # Run the workflow
-        output = (await app.ainvoke(initial_state, {"recursion_limit": 200}))
+        output = await app.ainvoke(initial_state, {"recursion_limit": 200})
 
         # Create the directory structure
         case_dir = Path(config.data_dir) / case_id

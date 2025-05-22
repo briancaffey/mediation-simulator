@@ -3,12 +3,12 @@
 import logging
 
 # Configure logging to suppress warnings
-logging.getLogger('aiq.data_models.discovery_metadata').setLevel(logging.ERROR)
-logging.getLogger('aiq.data_models.discovery_metadata').propagate = False
-logging.getLogger('aiq.agent.register').setLevel(logging.ERROR)
-logging.getLogger('aiq.agent.register').propagate = False
-logging.getLogger('aiq.runtime.loader').setLevel(logging.ERROR)
-logging.getLogger('aiq.runtime.loader').propagate = False
+logging.getLogger("aiq.data_models.discovery_metadata").setLevel(logging.ERROR)
+logging.getLogger("aiq.data_models.discovery_metadata").propagate = False
+logging.getLogger("aiq.agent.register").setLevel(logging.ERROR)
+logging.getLogger("aiq.agent.register").propagate = False
+logging.getLogger("aiq.runtime.loader").setLevel(logging.ERROR)
+logging.getLogger("aiq.runtime.loader").propagate = False
 
 from aiq.builder.builder import Builder
 from aiq.builder.function_info import FunctionInfo
@@ -42,8 +42,11 @@ async def calculator_inequality(tool_config: InequalityToolConfig, builder: Buil
     # Create a Generic AIQ Toolkit tool that can be used with any supported LLM framework
     yield FunctionInfo.from_fn(
         _calculator_inequality,
-        description=("This is a mathematical tool used to perform an inequality comparison between two numbers. "
-                     "It takes two numbers as an input and determines if one is greater or are equal."))
+        description=(
+            "This is a mathematical tool used to perform an inequality comparison between two numbers. "
+            "It takes two numbers as an input and determines if one is greater or are equal."
+        ),
+    )
 
 
 class MultiplyToolConfig(FunctionBaseConfig, name="calculator_multiply"):
@@ -65,8 +68,11 @@ async def calculator_multiply(config: MultiplyToolConfig, builder: Builder):
     # Create a Generic AIQ Toolkit tool that can be used with any supported LLM framework
     yield FunctionInfo.from_fn(
         _calculator_multiply,
-        description=("This is a mathematical tool used to multiply two numbers together. "
-                     "It takes 2 numbers as an input and computes their numeric product as the output."))
+        description=(
+            "This is a mathematical tool used to multiply two numbers together. "
+            "It takes 2 numbers as an input and computes their numeric product as the output."
+        ),
+    )
 
 
 class DivisionToolConfig(FunctionBaseConfig, name="calculator_divide"):
@@ -88,8 +94,11 @@ async def calculator_divide(config: DivisionToolConfig, builder: Builder):
     # Create a Generic AIQ Toolkit tool that can be used with any supported LLM framework
     yield FunctionInfo.from_fn(
         _calculator_divide,
-        description=("This is a mathematical tool used to divide one number by another. "
-                     "It takes 2 numbers as an input and computes their numeric quotient as the output."))
+        description=(
+            "This is a mathematical tool used to divide one number by another. "
+            "It takes 2 numbers as an input and computes their numeric quotient as the output."
+        ),
+    )
 
 
 class SubtractToolConfig(FunctionBaseConfig, name="calculator_subtract"):
@@ -111,12 +120,16 @@ async def calculator_subtract(config: SubtractToolConfig, builder: Builder):
     # Create a Generic AIQ Toolkit tool that can be used with any supported LLM framework
     yield FunctionInfo.from_fn(
         _calculator_subtract,
-        description=("This is a mathematical tool used to subtract one number from another. "
-                     "It takes 2 numbers as an input and computes their numeric difference as the output."))
+        description=(
+            "This is a mathematical tool used to subtract one number from another. "
+            "It takes 2 numbers as an input and computes their numeric difference as the output."
+        ),
+    )
 
 
 class AddToolConfig(FunctionBaseConfig, name="calculator_add"):
     pass
+
 
 @register_function(config_type=AddToolConfig)
 async def calculator_add(config: AddToolConfig, builder: Builder):
@@ -133,5 +146,8 @@ async def calculator_add(config: AddToolConfig, builder: Builder):
     # Create a Generic AIQ Toolkit tool that can be used with any supported LLM framework
     yield FunctionInfo.from_fn(
         _calculator_add,
-        description=("This is a mathematical tool used to add two numbers. "
-                     "It takes 2 numbers as an input and computes their numeric sum as the output."))
+        description=(
+            "This is a mathematical tool used to add two numbers. "
+            "It takes 2 numbers as an input and computes their numeric sum as the output."
+        ),
+    )

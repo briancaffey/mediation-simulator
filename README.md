@@ -32,3 +32,9 @@ Milvus is used for indexing case documents and for parties to retrieve relevant 
 ```
 docker compose -f docker-compose.milvus.yml up
 ```
+
+## Image Generation with Flux
+
+```
+python flux/main.py
+```

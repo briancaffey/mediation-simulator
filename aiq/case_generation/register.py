@@ -7,21 +7,23 @@ It creates a description of a case for use in a mediation simulation
 
 import logging
 
+
 class WarningFilter(logging.Filter):
     def filter(self, record):
         return not (
-            record.levelname == 'WARNING' and
-            record.name == 'aiq.data_models.discovery_metadata' and
-            'Package metadata not found' in record.getMessage()
+            record.levelname == "WARNING"
+            and record.name == "aiq.data_models.discovery_metadata"
+            and "Package metadata not found" in record.getMessage()
         )
+
 
 # Configure logging to suppress warnings for specific modules
 root_logger = logging.getLogger()
 root_logger.addFilter(WarningFilter())
 
-logging.getLogger('aiq.cli.commands.start').setLevel(logging.ERROR)
-logging.getLogger('aiq.data_models.discovery_metadata').setLevel(logging.ERROR)
-logging.getLogger('aiq.data_models.discovery_metadata').propagate = False
+logging.getLogger("aiq.cli.commands.start").setLevel(logging.ERROR)
+logging.getLogger("aiq.data_models.discovery_metadata").setLevel(logging.ERROR)
+logging.getLogger("aiq.data_models.discovery_metadata").propagate = False
 
 import os
 import random
@@ -49,48 +51,78 @@ class CaseGenerationWorkflowConfig(FunctionBaseConfig, name="case_generation"):
 
 class Document(BaseModel):
     """A document in the case"""
+
     name: str = Field(description="The name of the document")
     description: str = Field(description="A description of what the document contains")
     type: str = Field(description="The type of document (e.g. contract, email, report)")
     filename: str = Field(description="The filename of the document ending with .md")
 
+
 class DocumentList(BaseModel):
     """List of documents in the case"""
-    documents: List[Document] = Field(description="List of documents mentioned in the case")
+
+    documents: List[Document] = Field(
+        description="List of documents mentioned in the case"
+    )
+
 
 class CaseDetails(BaseModel):
     """Structured case details extracted from the case description"""
+
     case_title: str = Field(description="The title of the case")
-    requesting_party_company: str = Field(description="The name of the requesting party's company")
-    requesting_party_representative: str = Field(description="The name of the requesting party's representative")
-    responding_party_company: str = Field(description="The name of the responding party's company")
-    responding_party_representative: str = Field(description="The name of the responding party's representative")
+    requesting_party_company: str = Field(
+        description="The name of the requesting party's company"
+    )
+    requesting_party_representative: str = Field(
+        description="The name of the requesting party's representative"
+    )
+    responding_party_company: str = Field(
+        description="The name of the responding party's company"
+    )
+    responding_party_representative: str = Field(
+        description="The name of the responding party's representative"
+    )
 
 
-@register_function(config_type=CaseGenerationWorkflowConfig, framework_wrappers=[LLMFrameworkEnum.LANGCHAIN])
-async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder: Builder):
+@register_function(
+    config_type=CaseGenerationWorkflowConfig,
+    framework_wrappers=[LLMFrameworkEnum.LANGCHAIN],
+)
+async def case_generation_workflow(
+    config: CaseGenerationWorkflowConfig, builder: Builder
+):
     from langchain_core.messages import HumanMessage, SystemMessage
     from langchain.output_parsers import PydanticOutputParser
     from langgraph.graph import StateGraph, END
 
     logger.info("🤖 Getting LLM with name: %s", config.llm)
-    llm = await builder.get_llm(llm_name=config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+    llm = await builder.get_llm(
+        llm_name=config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN
+    )
     logger.info("✅ LLM initialized: %s", llm)
 
-
     class CaseGenerationState(TypedDict):
-        """"
+        """ "
         Case generation state
         """
+
         case_id: str | None
         initial_case_description: str | None
         basic_case_information: str | None
         documents: List[dict] | None
         case_title: str = Field(description="The title of the case")
-        requesting_party_company: str = Field(description="The name of the requesting party's company")
-        requesting_party_representative: str = Field(description="The name of the requesting party's representative")
-        responding_party_company: str = Field(description="The name of the responding party's company")
-        responding_party_representative: str = Field(description="The name of the responding party's representative")
+        requesting_party_company: str = Field(
+            description="The name of the requesting party's company"
+        )
+        requesting_party_representative: str = Field(
+            description="The name of the requesting party's representative"
+        )
+        responding_party_company: str = Field(
+            description="The name of the responding party's company"
+        )
+        responding_party_representative: str = Field(
+            description="The name of the responding party's representative"
+        )
 
     async def initial(state: CaseGenerationState) -> CaseGenerationState:
         """generate the initial case description"""
@@ -100,12 +132,14 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             case_description_file = case_dir / "initial_case_description.md"
 
             if case_description_file.exists():
-                logger.info(f"Loading existing case description from {case_description_file}")
+                logger.info(
+                    f"Loading existing case description from {case_description_file}"
+                )
                 with open(case_description_file, "r") as f:
                     return {
                         "case_id": state["case_id"],
                         "initial_case_description": f.read(),
-                        "documents": None
+                        "documents": None,
                     }
 
         # Read the prompt from file
@@ -115,8 +149,10 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
 
         # If no existing case found, generate new one
         messages = [
-            SystemMessage(content="You are a legal case creator that creates descriptions of cases for legal mediation competitions. Your task is to generate information based on the user's request. Your answers should be complete and should address each topic with proper headings."),
-            HumanMessage(content=case_generation_prompt)
+            SystemMessage(
+                content="You are a legal case creator that creates descriptions of cases for legal mediation competitions. Your task is to generate information based on the user's request. Your answers should be complete and should address each topic with proper headings."
+            ),
+            HumanMessage(content=case_generation_prompt),
         ]
 
         # Get response from LLM
@@ -124,13 +160,13 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
         response = await llm.ainvoke(messages)
 
         # Ensure we have content from the response
-        content = response.content if hasattr(response, 'content') else str(response)
+        content = response.content if hasattr(response, "content") else str(response)
 
         # Update the state with the case description
         return {
             "case_id": state.get("case_id"),
             "initial_case_description": content,
-            "documents": None
+            "documents": None,
         }
 
     async def document_extraction(state: CaseGenerationState) -> CaseGenerationState:
@@ -145,8 +181,10 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
                 with open(documents_file, "r") as f:
                     return {
                         "case_id": state["case_id"],
-                        "initial_case_description": state.get("initial_case_description"),
-                        "documents": json.load(f)
+                        "initial_case_description": state.get(
+                            "initial_case_description"
+                        ),
+                        "documents": json.load(f),
                     }
 
         if not state.get("initial_case_description"):
@@ -154,7 +192,7 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             return {
                 "case_id": state.get("case_id"),
                 "initial_case_description": state.get("initial_case_description"),
-                "documents": []
+                "documents": [],
             }
 
         # Create the output parser
@@ -162,7 +200,8 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
 
         # Create messages for the LLM
         messages = [
-            SystemMessage(content="""You are a document extraction specialist. Your task is to extract information about documents mentioned in the case description.
+            SystemMessage(
+                content="""You are a document extraction specialist. Your task is to extract information about documents mentioned in the case description.
             For each document mentioned, extract its name, type, and description.
             The output should be a JSON object with a 'documents' key containing an array of document objects.
             Each document object should have 'name', 'type', 'description' and 'filename' fields.
@@ -182,11 +221,14 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
                   "filename": "contract.md"
                 }
               ]
-            }"""),
-            HumanMessage(content=f"""Extract document information from this case description:
+            }"""
+            ),
+            HumanMessage(
+                content=f"""Extract document information from this case description:
             {state['initial_case_description']}
 
-            {parser.get_format_instructions()}""")
+            {parser.get_format_instructions()}"""
+            ),
         ]
 
         # Get response from LLM
@@ -201,7 +243,7 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
                 return {
                     "case_id": state.get("case_id"),
                     "initial_case_description": state.get("initial_case_description"),
-                    "documents": []
+                    "documents": [],
                 }
 
             # Parse the response into structured data
@@ -211,14 +253,14 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             return {
                 "case_id": state.get("case_id"),
                 "initial_case_description": state.get("initial_case_description"),
-                "documents": documents
+                "documents": documents,
             }
         except Exception as e:
             logger.error("❌ Failed to parse document extraction response: %s", str(e))
             return {
                 "case_id": state.get("case_id"),
                 "initial_case_description": state.get("initial_case_description"),
-                "documents": []
+                "documents": [],
             }
 
     async def document_generation(state: CaseGenerationState) -> CaseGenerationState:
@@ -241,12 +283,15 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
 
             # Create messages for the LLM
             messages = [
-                SystemMessage(content="""You are an expert document creator specializing in legal competition materials.
+                SystemMessage(
+                    content="""You are an expert document creator specializing in legal competition materials.
                 Your task is to create detailed, well-structured documents using proper markdown formatting.
                 Use appropriate headings (H1, H2, H3), lists, tables, and other markdown elements to organize the content.
                 The document should be professional, clear, and suitable for a legal competition.
-                Include all relevant details and maintain a formal tone throughout."""),
-                HumanMessage(content=f"""Create a detailed document for a legal competition with the following information:
+                Include all relevant details and maintain a formal tone throughout."""
+                ),
+                HumanMessage(
+                    content=f"""Create a detailed document for a legal competition with the following information:
 
                 Case Information:
                 {state.get('basic_case_information', '')}
@@ -257,13 +302,16 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
                 Document Description: {doc['description']}
 
                 Please create a comprehensive document based on the provided document information.
-                The document should be detailed enough to be used in a legal competition.""")
+                The document should be detailed enough to be used in a legal competition."""
+                ),
             ]
 
             # Get response from LLM
             logger.info(f"📄 Generating document content for {doc['filename']}")
             response = await llm.ainvoke(messages)
-            content = response.content if hasattr(response, 'content') else str(response)
+            content = (
+                response.content if hasattr(response, "content") else str(response)
+            )
 
             # Save the document
             with open(doc_path, "w") as f:
@@ -272,7 +320,9 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
 
         return state
 
-    async def basic_case_information_extraction(state: CaseGenerationState) -> CaseGenerationState:
+    async def basic_case_information_extraction(
+        state: CaseGenerationState,
+    ) -> CaseGenerationState:
         """Extract basic case information from the case description"""
         if not state.get("initial_case_description"):
             logger.warning("No initial case description found in state")
@@ -280,12 +330,13 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
                 "case_id": state.get("case_id"),
                 "initial_case_description": state.get("initial_case_description"),
                 "basic_case_information": None,
-                "documents": state.get("documents")
+                "documents": state.get("documents"),
             }
 
         # Create messages for the LLM
         messages = [
-            SystemMessage(content="""You are a legal case information extraction specialist. Your task is to extract basic, non-confidential information from case descriptions.
+            SystemMessage(
+                content="""You are a legal case information extraction specialist. Your task is to extract basic, non-confidential information from case descriptions.
             Focus on extracting:
             1. A clear, concise case title
             2. All parties involved in the case
@@ -294,8 +345,10 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
 
             DO NOT include any confidential information or facts that are specific to individual parties.
             The information should be structured and clear, suitable for use in legal proceedings.
-            Keep the description of each section concise and to the point."""),
-            HumanMessage(content=f"""Extract basic case information from this case description:
+            Keep the description of each section concise and to the point."""
+            ),
+            HumanMessage(
+                content=f"""Extract basic case information from this case description:
             {state['initial_case_description']}
 
             Format your response with clear headings for each section:
@@ -309,17 +362,20 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             [Background information]
 
             # General Facts
-            [General facts known to all parties]""")
+            [General facts known to all parties]"""
+            ),
         ]
 
         # Get response from LLM
         logger.info("📝 Doing basic case information extraction")
         response = await llm.ainvoke(messages)
-        content = response.content if hasattr(response, 'content') else str(response)
+        content = response.content if hasattr(response, "content") else str(response)
 
         # Save the basic case information to a markdown file
         case_dir = Path(config.data_dir) / state["case_id"]
-        case_dir.mkdir(parents=True, exist_ok=True)  # Create directory if it doesn't exist
+        case_dir.mkdir(
+            parents=True, exist_ok=True
+        )  # Create directory if it doesn't exist
         basic_info_file = case_dir / "basic_case_information.md"
         with open(basic_info_file, "w") as f:
             f.write(content)
@@ -329,10 +385,12 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             "case_id": state.get("case_id"),
             "initial_case_description": state.get("initial_case_description"),
             "basic_case_information": content,
-            "documents": state.get("documents")
+            "documents": state.get("documents"),
         }
 
-    async def case_details_extraction(state: CaseGenerationState) -> CaseGenerationState:
+    async def case_details_extraction(
+        state: CaseGenerationState,
+    ) -> CaseGenerationState:
         """Extract structured case details from the basic case information"""
         if not state.get("basic_case_information"):
             logger.warning("No basic case information found in state")
@@ -343,7 +401,8 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
 
         # Create messages for the LLM
         messages = [
-            SystemMessage(content="""You are a case details extraction specialist. Your task is to extract specific case details from the provided case information.
+            SystemMessage(
+                content="""You are a case details extraction specialist. Your task is to extract specific case details from the provided case information.
             Extract the following information:
                 - case title
                 - requesting party company name
@@ -353,11 +412,14 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
 
             The first character of your response must be '{', and the last character of your response must be '}'.
             Do not include any other text, markdown formatting, or explanations.
-            Only return valid JSON that matches the required schema."""),
-            HumanMessage(content=f"""Extract case details from this case information:
+            Only return valid JSON that matches the required schema."""
+            ),
+            HumanMessage(
+                content=f"""Extract case details from this case information:
             {state['initial_case_description']}
 
-            {parser.get_format_instructions()}""")
+            {parser.get_format_instructions()}"""
+            ),
         ]
 
         # Get response from LLM
@@ -375,22 +437,20 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
                 json.dump(case_details, f, indent=2)
             logger.info(f"✅ Saved case details to {case_details_file}")
 
-            ret_state = {
-                **state,
-                **case_details
-            }
+            ret_state = {**state, **case_details}
 
             return ret_state
         except Exception as e:
             logger.error("❌ Failed to parse case details: %s", str(e))
             return state
 
-
     workflow = StateGraph(CaseGenerationState)
     workflow.add_node("initial", initial)
     workflow.set_entry_point("initial")
     workflow.add_node("document_extraction", document_extraction)
-    workflow.add_node("basic_case_information_extraction", basic_case_information_extraction)
+    workflow.add_node(
+        "basic_case_information_extraction", basic_case_information_extraction
+    )
     workflow.add_node("document_generation", document_generation)
     workflow.add_node("case_details_extraction", case_details_extraction)
 
@@ -406,23 +466,33 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
     # Save workflow visualization
     try:
         import graphviz
-        dot = graphviz.Digraph(comment='Case Generation Workflow')
-        dot.attr(rankdir='TB')  # Top to bottom layout
-        dot.attr('node', shape='box', style='rounded,filled', fillcolor='#4A90E2', fontcolor='white', fontname='Arial')
-        dot.attr('edge', color='#666666', penwidth='1.5')
+
+        dot = graphviz.Digraph(comment="Case Generation Workflow")
+        dot.attr(rankdir="TB")  # Top to bottom layout
+        dot.attr(
+            "node",
+            shape="box",
+            style="rounded,filled",
+            fillcolor="#4A90E2",
+            fontcolor="white",
+            fontname="Arial",
+        )
+        dot.attr("edge", color="#666666", penwidth="1.5")
 
         # Define node colors for different types of nodes
         node_colors = {
-            'initial': '#4A90E2',  # Blue
-            'basic_case_information_extraction': '#50C878',  # Emerald Green
-            'document_extraction': '#FFA500',  # Orange
-            'document_generation': '#9370DB',  # Medium Purple
-            'END': '#FF6B6B'  # Coral Red
+            "initial": "#4A90E2",  # Blue
+            "basic_case_information_extraction": "#50C878",  # Emerald Green
+            "document_extraction": "#FFA500",  # Orange
+            "document_generation": "#9370DB",  # Medium Purple
+            "END": "#FF6B6B",  # Coral Red
         }
 
         # Add nodes with custom colors
         for node in app.get_graph().nodes:
-            color = node_colors.get(node, '#4A90E2')  # Default to blue if node type not specified
+            color = node_colors.get(
+                node, "#4A90E2"
+            )  # Default to blue if node type not specified
             dot.node(node, node, fillcolor=color)
 
         # Add edges
@@ -430,25 +500,27 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             dot.edge(edge[0], edge[1])
 
         # Save the graph
-        dot.render('case_generation_workflow', format='png', cleanup=True)
+        dot.render("case_generation_workflow", format="png", cleanup=True)
         logger.info("📊 Saved workflow visualization to case_generation_workflow.png")
     except ImportError:
-        logger.warning("⚠️ graphviz not installed. Skipping workflow visualization. Install with: pip install graphviz")
+        logger.warning(
+            "⚠️ graphviz not installed. Skipping workflow visualization. Install with: pip install graphviz"
+        )
     except Exception as e:
         logger.error(f"❌ Failed to save workflow visualization: {str(e)}")
 
     async def _response_fn(input_message: str = None) -> str:
         logger.debug("🚀 Starting case_generation workflow execution")
 
-        case_id = input_message or ''.join(random.choices(string.ascii_lowercase, k=8))
+        case_id = input_message or "".join(random.choices(string.ascii_lowercase, k=8))
         # Initialize the state with the required fields
         initial_state = {
             "case_id": case_id,  # Use input_message as case_id
             "initial_case_description": None,
-            "documents": None
+            "documents": None,
         }
 
-        out = (await app.ainvoke(initial_state))
+        out = await app.ainvoke(initial_state)
         output = out["initial_case_description"]
         documents = out.get("documents", [])
 
@@ -474,9 +546,9 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
 
         # Add custom representer for strings
         def str_presenter(dumper, data):
-            if '\n' in data:
-                return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
-            return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+            if "\n" in data:
+                return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+            return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
         yaml.add_representer(str, str_presenter)
 
@@ -489,28 +561,32 @@ async def case_generation_workflow(config: CaseGenerationWorkflowConfig, builder
             "basic_case_information": out.get("basic_case_information"),
             "case_title": out.get("case_title"),
             "requesting_party_company": out.get("requesting_party_company"),
-            "requesting_party_representative": out.get("requesting_party_representative"),
+            "requesting_party_representative": out.get(
+                "requesting_party_representative"
+            ),
             "responding_party_company": out.get("responding_party_company"),
-            "responding_party_representative": out.get("responding_party_representative"),
+            "responding_party_representative": out.get(
+                "responding_party_representative"
+            ),
             "documents": [
                 {
                     "name": doc.get("name"),
                     "type": doc.get("type"),
                     "description": doc.get("description"),
-                    "filename": doc.get("filename")
+                    "filename": doc.get("filename"),
                 }
                 for doc in (out.get("documents") or [])
-            ]
+            ],
         }
 
-        with open(state_file, "w", encoding='utf-8') as f:
+        with open(state_file, "w", encoding="utf-8") as f:
             yaml.dump(
                 state_dict,
                 f,
                 default_flow_style=False,
                 sort_keys=False,
                 allow_unicode=True,  # Allow Unicode characters
-                width=1000  # Prevent line wrapping
+                width=1000,  # Prevent line wrapping
             )
 
         return out["case_id"]

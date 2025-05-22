@@ -21,15 +21,13 @@ from llama_index.vector_stores.milvus import MilvusVectorStore
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('aiq_indexing.log')
-    ]
+    handlers=[logging.StreamHandler(), logging.FileHandler("aiq_indexing.log")],
 )
 logger = logging.getLogger(__name__)
 
 # Define constants for storage configuration
 MILVUS_COLLECTION_NAME = "mediation_simulator_case_documents"
+
 
 def get_index():
     """
@@ -41,14 +39,15 @@ def get_index():
     VECTORDB_SERVICE_HOST = os.environ.get("VECTORDB_SERVICE_HOST", "localhost")
     VECTORDB_SERVICE_PORT = os.environ.get("VECTORDB_SERVICE_PORT", "19530")
 
-    logger.info(f"Configuration: VECTORDB_SERVICE_HOST={VECTORDB_SERVICE_HOST}, "
-                f"VECTORDB_SERVICE_PORT={VECTORDB_SERVICE_PORT}")
+    logger.info(
+        f"Configuration: VECTORDB_SERVICE_HOST={VECTORDB_SERVICE_HOST}, "
+        f"VECTORDB_SERVICE_PORT={VECTORDB_SERVICE_PORT}"
+    )
 
     try:
         logger.info("Initializing embedding model: nvidia/nv-embedqa-e5-v5")
         embed_model = NVIDIAEmbeddings(
-            base_url="http://192.168.5.96:8000/v1",
-            model="nvidia/nv-embedqa-e5-v5"
+            base_url="http://192.168.5.96:8000/v1", model="nvidia/nv-embedqa-e5-v5"
         )
         Settings.embed_model = embed_model
         logger.info("✅ Embedding model initialized successfully")
@@ -66,9 +65,9 @@ def get_index():
             dim=1024,  # Updated dimension for nv-embedqa-e5-v5
             collection_name=MILVUS_COLLECTION_NAME,
             overwrite=True,  # Set to True to recreate the collection
-            batch_size=50,   # Add smaller batch size to prevent row count mismatches
+            batch_size=50,  # Add smaller batch size to prevent row count mismatches
             embedding_field="vector",
-            metric_type="IP"  # Set metric type to Inner Product
+            metric_type="IP",  # Set metric type to Inner Product
         )
         logger.info("✅ Successfully created MilvusVectorStore instance")
 
@@ -76,12 +75,15 @@ def get_index():
         logger.info("✅ Created storage context with Milvus vector store")
 
         index = VectorStoreIndex.from_documents([], storage_context=storage_context)
-        logger.info(f"✅ Successfully initialized index with Milvus collection '{MILVUS_COLLECTION_NAME}'")
+        logger.info(
+            f"✅ Successfully initialized index with Milvus collection '{MILVUS_COLLECTION_NAME}'"
+        )
         return index
     except Exception as e:
         logger.error(f"❌ Failed to connect to Milvus: {str(e)}")
         logger.error(traceback.format_exc())
         raise
+
 
 def build_index():
     """
@@ -133,7 +135,9 @@ def build_index():
             logger.info(f"📄 Reading documents.json for case {case_id}")
             with open(documents_json_path, "r", encoding="utf-8") as f:
                 doc_metadata_list = json.load(f)
-            logger.info(f"✅ Successfully loaded {len(doc_metadata_list)} document entries")
+            logger.info(
+                f"✅ Successfully loaded {len(doc_metadata_list)} document entries"
+            )
         except json.JSONDecodeError as e:
             logger.error(f"❌ Error decoding JSON from {documents_json_path}: {str(e)}")
             logger.error(traceback.format_exc())
@@ -154,7 +158,9 @@ def build_index():
             logger.info(f"📑 Processing document: {doc_filename}")
 
             if not all([doc_name, doc_description, doc_type, doc_filename]):
-                logger.warning(f"⚠️ Missing required fields in document metadata: {doc_info}")
+                logger.warning(
+                    f"⚠️ Missing required fields in document metadata: {doc_info}"
+                )
                 skipped_docs += 1
                 continue
 
@@ -191,7 +197,9 @@ def build_index():
                 )
                 all_llama_documents.append(llama_doc)
                 processed_docs += 1
-                logger.info(f"✅ Successfully created LlamaIndex Document for: {doc_filename}")
+                logger.info(
+                    f"✅ Successfully created LlamaIndex Document for: {doc_filename}"
+                )
             except Exception as e:
                 logger.error(f"❌ Error creating LlamaIndex Document: {str(e)}")
                 logger.error(traceback.format_exc())
@@ -219,7 +227,7 @@ def build_index():
         node_parser = SentenceSplitter(
             chunk_size=150,  # Much smaller chunks to ensure we stay under limit
             chunk_overlap=10,  # Keep small overlap
-            separator="\n"  # Split on newlines to maintain better context
+            separator="\n",  # Split on newlines to maintain better context
         )
         logger.info("✅ Node parser configured")
 
@@ -233,16 +241,22 @@ def build_index():
                 temp_nodes_for_this_doc = []
                 for node in nodes_from_doc:
                     # Keep the document description very short
-                    doc_description_for_header = node.metadata.get("document_description", "No description provided.")[:30]
+                    doc_description_for_header = node.metadata.get(
+                        "document_description", "No description provided."
+                    )[:30]
                     original_node_content = node.get_content(metadata_mode="none")
 
                     # Truncate the content if it's too long (rough estimate: 1 token ≈ 4 characters)
                     max_chars = 400  # Conservative estimate for 512 tokens
                     if len(original_node_content) > max_chars:
-                        original_node_content = original_node_content[:max_chars] + "..."
+                        original_node_content = (
+                            original_node_content[:max_chars] + "..."
+                        )
 
                     # Make the header as short as possible
-                    node.text = f"Doc:{doc_description_for_header}\n{original_node_content}"
+                    node.text = (
+                        f"Doc:{doc_description_for_header}\n{original_node_content}"
+                    )
 
                     # Log the length of the text to help debug
                     logger.info(f"Node text length: {len(node.text)} characters")
@@ -250,9 +264,13 @@ def build_index():
                     temp_nodes_for_this_doc.append(node)
 
                 all_processed_nodes.extend(temp_nodes_for_this_doc)
-                logger.info(f"✅ Successfully processed {len(temp_nodes_for_this_doc)} nodes")
+                logger.info(
+                    f"✅ Successfully processed {len(temp_nodes_for_this_doc)} nodes"
+                )
             except Exception as e:
-                logger.error(f"❌ Error processing document {l_doc.metadata['filename']}: {str(e)}")
+                logger.error(
+                    f"❌ Error processing document {l_doc.metadata['filename']}: {str(e)}"
+                )
                 logger.error(traceback.format_exc())
                 continue
 
@@ -270,6 +288,7 @@ def build_index():
         raise
 
     logger.info("\n✨ Index building process completed successfully")
+
 
 if __name__ == "__main__":
     try:
