@@ -51,14 +51,17 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     from .prompts.responding import (
         generate_opening_statement as generate_responding_opening_statement,
         generate_joint_discussion_response as generate_responding_joint_discussion,
+        generate_negotiation_responding_party as generate_negotiation_responding_party,
     )
     from .prompts.mediator import (
         generate_opening_statement as generate_mediator_opening_statement,
         generate_joint_discussion_response as generate_mediator_joint_discussion,
+        generate_negotiation_mediator as generate_negotiation_mediator,
     )
     from .prompts.requesting import (
         generate_opening_statement as generate_requesting_opening_statement,
         generate_joint_discussion_response as generate_requesting_joint_discussion,
+        generate_negotiation_requesting_party as generate_negotiation_requesting_party,
     )
 
     logger.info("🤖 Getting LLM with name: %s", config.llm)
