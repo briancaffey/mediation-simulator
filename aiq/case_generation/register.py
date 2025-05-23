@@ -444,6 +444,68 @@ async def case_generation_workflow(
             logger.error("❌ Failed to parse case details: %s", str(e))
             return state
 
+    async def case_image_generation_prompts(
+        state: CaseGenerationState,
+    ) -> CaseGenerationState:
+        """Generate image prompts for the case"""
+        if not state.get("basic_case_information"):
+            logger.warning("No basic case information found in state")
+            return state
+
+        # Create messages for the LLM
+        messages = [
+            SystemMessage(
+                content="""You are an expert at creating detailed image generation prompts for legal cases. Your task is to generate a JSON array of image prompts that can be used with AI image generation services.
+
+            Each prompt should be concise but detailed, capturing different aspects of the case such as:
+            - The physical appearance and attire of the parties involved
+            - The business environment and facilities
+            - The industry context and setting
+            - Key locations or scenes relevant to the case
+            - Professional settings like courtrooms or meeting rooms
+            - Any relevant documents or evidence
+
+            The prompts should be specific enough to generate meaningful images but concise enough to work well with image generation services.
+            Focus on creating diverse prompts that capture different aspects of the case.
+
+            The first character of your response must be '[', and the last character of your response must be ']'.
+            Do not include any other text, markdown formatting, or explanations.
+            Only return a valid JSON array of strings.
+
+            Example format:
+            [
+                "A professional business meeting room with two executives in formal suits discussing documents",
+                "A modern office building exterior with corporate signage",
+                "A courtroom with judge's bench and legal professionals in formal attire"
+            ]"""
+            ),
+            HumanMessage(
+                content=f"""Generate image prompts based on this case information:
+            {state['basic_case_information']}
+
+            Include prompts that capture the nature of the case, the parties involved, and the business context."""
+            ),
+        ]
+
+        # Get response from LLM
+        logger.info("🎨 Generating image prompts")
+        response = await llm.ainvoke(messages)
+        try:
+            # Parse the response into a list of prompts
+            prompts = json.loads(response.content.strip())
+
+            # Save the prompts to a JSON file
+            case_dir = Path(config.data_dir) / state["case_id"]
+            prompts_file = case_dir / "image_prompts.json"
+            with open(prompts_file, "w") as f:
+                json.dump(prompts, f, indent=2)
+            logger.info(f"✅ Saved image prompts to {prompts_file}")
+
+            return {**state, "image_prompts": prompts}
+        except Exception as e:
+            logger.error("❌ Failed to parse image prompts: %s", str(e))
+            return state
+
     workflow = StateGraph(CaseGenerationState)
     workflow.add_node("initial", initial)
     workflow.set_entry_point("initial")
@@ -453,13 +515,15 @@ async def case_generation_workflow(
     )
     workflow.add_node("document_generation", document_generation)
     workflow.add_node("case_details_extraction", case_details_extraction)
+    workflow.add_node("case_image_generation_prompts", case_image_generation_prompts)
 
     # Update the edges to create a proper flow
     workflow.add_edge("initial", "document_extraction")
     workflow.add_edge("document_extraction", "basic_case_information_extraction")
     workflow.add_edge("basic_case_information_extraction", "document_generation")
     workflow.add_edge("document_generation", "case_details_extraction")
-    workflow.add_edge("case_details_extraction", END)
+    workflow.add_edge("case_details_extraction", "case_image_generation_prompts")
+    workflow.add_edge("case_image_generation_prompts", END)
 
     app = workflow.compile()
 
