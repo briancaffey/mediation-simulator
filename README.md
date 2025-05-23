@@ -1,5 +1,7 @@
 # Mediation Simulator
 
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">📑🤝🤖⚖️<br>Mediation Simulator is my submission for the NVIDIA Agent Intelligence Toolkit Hackathon!<br><br>This application simulates law school mediation competitions using agentic workflows with LLMs, orchestrated by the NVIDIA Agent Intelligence Toolkit <a href="https://twitter.com/hashtag/NVIDIAHackathon?src=hash&amp;ref_src=twsrc%5Etfw">#NVIDIAHackathon</a> <a href="https://twitter.com/NVIDIAAIDev?ref_src=twsrc%5Etfw">@NVIDIAAIDev</a>… <a href="https://t.co/sXDVyMkmkw">pic.twitter.com/sXDVyMkmkw</a></p>&mdash; Brian Caffey (@briancaffey) <a href="https://twitter.com/briancaffey/status/1926036369597510117?ref_src=twsrc%5Etfw">May 23, 2025</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
 Mediation Simulator helps develop your mediation skills, powered by NVIDIA Agent Intelligence Toolkit. This project is my submission for the [NVIDIA Agent Intelligence Toolkit Hackathon](https://developer.nvidia.com/agentiq-hackathon).
 
 Mediation is a process where two parties in a dispute come together to resolve their differences. It is a process that is often used in business disputes, but it can be used in other disputes as well. This project was modeled after academic mediation competitions for law school students. The goal of these competitions is to simulate a mediation process and to help law students develop their mediation skills. These competitions use fictional case information and the students assume either the role or the requesting party or the role of the responding party.
@@ -22,6 +24,7 @@ This project requires Python 3.11 or 3.12 and `uv`, it has been tested on MacOS 
 - Milvus vector store for indexing case documents
 - Phoenix for telemetry and tracing
 - An NVIDIA API key or a local LLM supporting the OpenAI API and tool calling
+- Install `graphviz` for generating the LangGraph workflow diagrams
 
 ## Set up Milvus with docker compose
 
@@ -65,8 +68,44 @@ aiq run --config_file configs/case-generation.yml --input ""
 The output from this workflow will include a case ID:
 
 ```
+(.venv) ~/git/mediation-simulator/aiq$ aiq run --config_file configs/case-generation.yml --input ""
+2025-05-23 19:51:05,455 - aiq.runtime.loader - WARNING - Loading module 'aiq.agent.register' from entry point 'aiq_agents' took a long time (316.687107 ms). Ensure all imports are inside your registered functions.
+2025-05-23 19:51:06,006 - phoenix.config - INFO - 📋 Ensuring phoenix working directory: /Users/brian/.phoenix
+2025-05-23 19:51:06,020 - phoenix.inferences.inferences - INFO - Dataset: phoenix_inferences_c1d3c5cd-657c-43df-a748-018579616fc3 initialized
+2025-05-23 19:51:09,206 - case_generation.register - INFO - 🤖 Getting LLM with name: nim_llm
+2025-05-23 19:51:09,238 - case_generation.register - INFO - ✅ LLM initialized: base_url='http://192.168.5.96:1234/v1' model='qwen3-8b' temperature=0.7 max_tokens=10000 top_p=1.0
+2025-05-23 19:51:09,645 - case_generation.register - INFO - 📊 Saved workflow visualization to case_generation_workflow.png
+
+Configuration Summary:
+--------------------
+Workflow Type: case_generation
+Number of Functions: 0
+Number of LLMs: 1
+Number of Embedders: 0
+Number of Memory: 0
+Number of Retrievers: 0
+
+2025-05-23 19:51:09,654 - case_generation.register - INFO - 💬 Sending request to LLM
+2025-05-23 19:51:22,583 - case_generation.register - INFO - 📑 Sending document extraction request to LLM
+2025-05-23 19:51:51,448 - case_generation.register - INFO - ✅ Successfully extracted 3 documents
+2025-05-23 19:51:51,450 - case_generation.register - INFO - 📝 Doing basic case information extraction
+2025-05-23 19:51:57,174 - case_generation.register - INFO - ✅ Saved basic case information to data/bsvhhswm/basic_case_information.md
+2025-05-23 19:51:57,176 - case_generation.register - INFO - 📄 Generating document content for supply_agreement_2021.md
+2025-05-23 19:52:17,870 - case_generation.register - INFO - ✅ Saved document to data/bsvhhswm/documents/supply_agreement_2021.md
+2025-05-23 19:52:17,870 - case_generation.register - INFO - 📄 Generating document content for quality_complaint_emails.md
+2025-05-23 19:52:39,375 - case_generation.register - INFO - ✅ Saved document to data/bsvhhswm/documents/quality_complaint_emails.md
+2025-05-23 19:52:39,376 - case_generation.register - INFO - 📄 Generating document content for payment_notice_apr_2024.md
+2025-05-23 19:52:53,289 - case_generation.register - INFO - ✅ Saved document to data/bsvhhswm/documents/payment_notice_apr_2024.md
+2025-05-23 19:52:53,293 - case_generation.register - INFO - 📋 Extracting case details
+2025-05-23 19:52:57,188 - case_generation.register - INFO - ✅ Saved case details to data/bsvhhswm/case_details.json
+2025-05-23 19:52:57,190 - case_generation.register - INFO - 🎨 Generating image prompts
+2025-05-23 19:53:05,067 - case_generation.register - INFO - ✅ Saved image prompts to data/bsvhhswm/image_prompts.json
+2025-05-23 19:53:05,071 - case_generation.register - INFO - 💾 Saved case description to data/bsvhhswm/initial_case_description.md
+2025-05-23 19:53:05,071 - case_generation.register - INFO - 💾 Saved documents to data/bsvhhswm/documents.json
+2025-05-23 19:53:05,080 - aiq.front_ends.console.console_front_end_plugin - INFO -
+--------------------------------------------------
 Workflow Result:
-['qbsknaqs']
+['bsvhhswm']
 ```
 
 You can review the case information in the directory `aiq/data/{case_id}/`. You will find the following files:
@@ -89,6 +128,61 @@ Simulating mediation for a case is done by running the following command from th
 
 ```
 aiq run --config_file configs/mediation.yml --input "{case_id}"
+```
+
+Output for a mediation session looks like this:
+
+```
+Configuration Summary:
+--------------------
+Workflow Type: mediation
+Number of Functions: 2
+Number of LLMs: 1
+Number of Embedders: 1
+Number of Memory: 0
+Number of Retrievers: 1
+
+2025-05-23 19:37:29,986 - mediation.register - INFO - 👤 [CLERK]: Current phase: OPENING_STATEMENTS, Turn: 0
+2025-05-23 19:37:29,988 - mediation.register - INFO - ⚖️ [MEDIATOR]: Mediator node called
+2025-05-23 19:37:36,721 - mediation.register - INFO - 👤 [CLERK]: Current phase: OPENING_STATEMENTS, Turn: 0
+2025-05-23 19:37:36,723 - mediation.register - INFO - 🌝 Requesting party node called
+2025-05-23 19:37:46,947 - mediation.register - INFO - 👤 [CLERK]: Current phase: OPENING_STATEMENTS, Turn: 0
+2025-05-23 19:37:46,949 - mediation.register - INFO - 🌚 Responding party node called
+2025-05-23 19:37:58,278 - mediation.register - INFO - 👤 [CLERK]: Current phase: OPENING_STATEMENTS, Turn: 0
+2025-05-23 19:37:58,280 - mediation.register - INFO - ⚖️ [MEDIATOR]: Mediator node called
+2025-05-23 19:38:06,025 - mediation.register - INFO - 👤 [CLERK]: Current phase: JOINT_DISCUSSION_INFO_GATHERING, Turn: 0
+2025-05-23 19:38:08,840 - mediation.register - INFO - 🌝 Requesting party node called
+2025-05-23 19:38:16,031 - mediation.register - INFO - 👤 [CLERK]: Current phase: JOINT_DISCUSSION_INFO_GATHERING, Turn: 1
+2025-05-23 19:38:17,873 - mediation.register - INFO - 🌚 Responding party node called
+2025-05-23 19:38:26,577 - mediation.register - INFO - 👤 [CLERK]: Current phase: JOINT_DISCUSSION_INFO_GATHERING, Turn: 2
+2025-05-23 19:38:30,471 - mediation.register - INFO - ⚖️ [MEDIATOR]: Mediator node called
+2025-05-23 19:38:39,275 - mediation.register - INFO - 👤 [CLERK]: Current phase: JOINT_DISCUSSION_INFO_GATHERING, Turn: 3
+2025-05-23 19:38:43,222 - mediation.register - INFO - 🌝 Requesting party node called
+2025-05-23 19:38:53,203 - mediation.register - INFO - 👤 [CLERK]: Current phase: JOINT_DISCUSSION_INFO_GATHERING, Turn: 4
+2025-05-23 19:38:55,815 - mediation.register - INFO - 🌚 Responding party node called
+2025-05-23 19:39:04,159 - mediation.register - INFO - 👤 [CLERK]: Current phase: JOINT_DISCUSSION_INFO_GATHERING, Turn: 5
+2025-05-23 19:39:04,163 - mediation.register - INFO - ⚖️ [MEDIATOR]: Mediator node called
+2025-05-23 19:39:13,492 - mediation.register - INFO - 👤 [CLERK]: Current phase: NEGOTIATION_BARGAINING, Turn: 5
+2025-05-23 19:39:20,077 - mediation.register - INFO - 🌝 Requesting party node called
+2025-05-23 19:39:28,325 - mediation.register - INFO - 👤 [CLERK]: Current phase: NEGOTIATION_BARGAINING, Turn: 6
+2025-05-23 19:39:30,268 - mediation.register - INFO - 🌚 Responding party node called
+2025-05-23 19:39:37,231 - mediation.register - INFO - 👤 [CLERK]: Current phase: NEGOTIATION_BARGAINING, Turn: 7
+2025-05-23 19:39:44,465 - mediation.register - INFO - ⚖️ [MEDIATOR]: Mediator node called
+2025-05-23 19:39:51,329 - mediation.register - INFO - 👤 [CLERK]: Current phase: NEGOTIATION_BARGAINING, Turn: 8
+2025-05-23 19:40:02,122 - mediation.register - INFO - 🌝 Requesting party node called
+2025-05-23 19:40:10,516 - mediation.register - INFO - 👤 [CLERK]: Current phase: NEGOTIATION_BARGAINING, Turn: 9
+2025-05-23 19:40:12,868 - mediation.register - INFO - 🌚 Responding party node called
+2025-05-23 19:40:20,653 - mediation.register - INFO - 👤 [CLERK]: Current phase: NEGOTIATION_BARGAINING, Turn: 10
+2025-05-23 19:40:20,655 - mediation.register - INFO - ⚖️ [MEDIATOR]: Mediator node called
+2025-05-23 19:40:30,283 - mediation.register - INFO - 👤 [CLERK]: Current phase: CONCLUSION_CLOSING_STATEMENTS, Turn: 10
+2025-05-23 19:40:30,285 - mediation.register - INFO - 🌝 Requesting party node called
+2025-05-23 19:40:37,104 - mediation.register - INFO - 👤 [CLERK]: Current phase: CONCLUSION_CLOSING_STATEMENTS, Turn: 10
+2025-05-23 19:40:37,108 - mediation.register - INFO - 🌚 Responding party node called
+2025-05-23 19:40:43,081 - mediation.register - INFO - 👤 [CLERK]: Current phase: CONCLUSION_CLOSING_STATEMENTS, Turn: 10
+2025-05-23 19:40:43,239 - aiq.front_ends.console.console_front_end_plugin - INFO -
+--------------------------------------------------
+Workflow Result:
+['xpzajohu']
 ```
 
 The mediation workflow is a LangGraph graph that has four main components:

@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Supply Agreement (2021)",
+    "description": "The original contract outlining delivery terms, quality standards, and penalty clauses for non-compliance.",
+    "type": "contract",
+    "filename": "supply_agreement_2021.md"
+  },
+  {
+    "name": "Email Chain: Quality Complaints (Q3 2023–Q1 2024)",
+    "description": "Emails between NordTech and Solora discussing repeated quality issues and delayed shipments.",
+    "type": "correspondence",
+    "filename": "quality_complaint_emails.md"
+  },
+  {
+    "name": "Payment Notice (April 2024)",
+    "description": "A notice from NordTech demanding overdue payments for goods shipped in December 2023.",
+    "type": "financial document",
+    "filename": "payment_notice_apr_2024.md"
+  }
+]
