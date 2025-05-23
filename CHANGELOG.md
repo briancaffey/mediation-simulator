@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/briancaffey/mediation-simulator/compare/v1.2.0...v1.3.0) (2025-05-23)
+
+
+### Features
+
+* **cases:** add more cases ([069baa2](https://github.com/briancaffey/mediation-simulator/commit/069baa2b15d41e39a92c31a6f3f7865ddff0db3a))
+
+
+### Bug Fixes
+
+* **css:** remove css classes from link ([e2aaba3](https://github.com/briancaffey/mediation-simulator/commit/e2aaba31f6938f4f90a2146d58191b6f5e18e4fd))
+
 ## [1.2.0](https://github.com/briancaffey/mediation-simulator/compare/v1.1.0...v1.2.0) (2025-05-23)
 
 
