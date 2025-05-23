@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.2.0](https://github.com/briancaffey/mediation-simulator/compare/v1.1.0...v1.2.0) (2025-05-23)
+
+
+### Features
+
+* **case-generation:** add more details to case info like name of case and names of parties ([7bd4730](https://github.com/briancaffey/mediation-simulator/commit/7bd473031f8ea9d05a5e1ed644f1ad8b8eea6235))
+* **conclusion:** add conclusion phase prompts ([ce4ad6d](https://github.com/briancaffey/mediation-simulator/commit/ce4ad6d9052250eaf5c2ba4d3d5fd2613861e716))
+* **conclusion:** clerk logic for conclusion phase ([7e590cb](https://github.com/briancaffey/mediation-simulator/commit/7e590cbfb0bf1c0a73da6550f992ede8e73607a1))
+* **docs:** update readme with instructions for setup ([bda78d4](https://github.com/briancaffey/mediation-simulator/commit/bda78d47b1562013f456b93f2135357dd687f855))
+* **images:** add image prompts in case generation workflow ([4b6b3bf](https://github.com/briancaffey/mediation-simulator/commit/4b6b3bf2b922c6d9905979d861434896748dda9c))
+* **negotation:** add negotiation phase prompts, format with black ([6852c3b](https://github.com/briancaffey/mediation-simulator/commit/6852c3b653c8106b4bbe5e08b0f1f60be3b6693b))
+* **pages:** fix issues for github pages deployment ([7a3ee05](https://github.com/briancaffey/mediation-simulator/commit/7a3ee058b3157207221ef9cbc40530e9de826e2d))
+* **web-site:** add script to generate list page for all sites ([c2f0f00](https://github.com/briancaffey/mediation-simulator/commit/c2f0f0074b3b8c9f72e050e3c40d0a9379b49dad))
+
+
+### Bug Fixes
+
+* **pages:** fix link for github pages ([9c39170](https://github.com/briancaffey/mediation-simulator/commit/9c39170c3d3d1596eb258fd77b0fded5dd1409d3))
+* **pages:** fix link for github pages ([52a8999](https://github.com/briancaffey/mediation-simulator/commit/52a89996498dd60f0b22ee37802786c0ef7a5a16))
+* **pages:** fix link for github pages ([f83609e](https://github.com/briancaffey/mediation-simulator/commit/f83609e5ed885badc2edc2273c17d9b7347c376a))
+* **pages:** fix link for github pages ([bbbdad8](https://github.com/briancaffey/mediation-simulator/commit/bbbdad8d6ca24bc28822d07e702132b261f56c1e))
+
 ## [1.1.0](https://github.com/briancaffey/mediation-simulator/compare/v1.0.0...v1.1.0) (2025-05-20)
 
 
