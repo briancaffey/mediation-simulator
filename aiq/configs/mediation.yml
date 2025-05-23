@@ -39,7 +39,7 @@ functions:
     tool_names:
       - case_document_rag
     verbose: true
-    max_iterations: 3
+    max_iterations: 5
 
 embedders:
   nv-embedqa-e5-v5:

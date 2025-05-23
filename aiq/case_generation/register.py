@@ -339,7 +339,7 @@ async def case_generation_workflow(
                 content="""You are a legal case information extraction specialist. Your task is to extract basic, non-confidential information from case descriptions.
             Focus on extracting:
             1. A clear, concise case title
-            2. All parties involved in the case
+            2. All parties involved in the case, including full names of companies and representatives
             3. Background information about the case
             4. General facts that are known to all parties
 

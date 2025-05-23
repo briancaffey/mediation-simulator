@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Supply Agreement",
+    "description": "The original 2021 agreement outlining terms of supply, payment, and liability.",
+    "type": "Contract",
+    "filename": "SupplyAgreement.md"
+  },
+  {
+    "name": "Payment Dispute Invoice",
+    "description": "NovaTech’s invoice for a disputed shipment, including details on delayed payments.",
+    "type": "Financial Document",
+    "filename": "PaymentDisputeInvoice.md"
+  },
+  {
+    "name": "Quality Inspection Report",
+    "description": "ZenCorp’s findings of defects in NovaTech’s microprocessors.",
+    "type": "Technical Report",
+    "filename": "QualityReport.md"
+  },
+  {
+    "name": "Correspondence Logs",
+    "description": "Email exchanges between both parties highlighting disagreements over terms.",
+    "type": "Communication",
+    "filename": "CorrespondenceLogs.md"
+  }
+]

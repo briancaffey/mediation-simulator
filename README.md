@@ -116,6 +116,8 @@ Then visit [http://[::]:8083/?case_id={case_id}](http://[::]:8083/?case_id={case
 
 ## Image Generation with Flux
 
+Set up the NVIDIA Flux NIM following instructions [here](https://build.nvidia.com/black-forest-labs/flux_1-dev/deploy). Then run the following command from the root of the project:
+
 ```
 python flux/main.py
 ```
@@ -125,4 +127,14 @@ python flux/main.py
 
 ```
 python aiq/generate_case_list_data.py
+```
+
+## Generate audio for voice prompts
+
+Dia was used to generate audio for voice prompts. Set up the Dia Gradio server following instructions [here](https://github.com/nari-labs/dia). Then run the following command from the root of the project.
+
+Set your custom prompts in the `dia/main.py` file and also adjust the URL for the Gradio server.
+
+```
+python dia/main.py
 ```

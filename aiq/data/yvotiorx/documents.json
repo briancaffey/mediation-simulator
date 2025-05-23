@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Joint Venture Agreement (JVA)",
+    "description": "Outlines profit-sharing ratios, IP ownership rules, and termination clauses for the partnership.",
+    "type": "Partnership Contract",
+    "filename": "JVA.md"
+  },
+  {
+    "name": "Intellectual Property Licensing Agreement (IPA)",
+    "description": "Details terms for QuantumTech’s licensing of its algorithms to NovaSynth.",
+    "type": "Legal Framework",
+    "filename": "IPA.md"
+  },
+  {
+    "name": "Profit Sharing Report (PSR)",
+    "description": "A 2023 report showing discrepancies in profit allocation between the parties.",
+    "type": "Financial Statement",
+    "filename": "PSR.md"
+  },
+  {
+    "name": "Termination Notice",
+    "description": "NovaSynth’s notice to dissolve the partnership, citing breaches of the JVA.",
+    "type": "Formal Communication",
+    "filename": "TN.md"
+  }
+]

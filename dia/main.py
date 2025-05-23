@@ -182,9 +182,25 @@ if __name__ == "__main__":
     # prompt = """[S1] Welcome, both parties, to this mediation session. I am your neutral facilitator here today, tasked with guiding this discussion toward a constructive resolution. The dispute between Nordland SolarSync and Solevia GreenPulse Distributors centers on a multi-year supply agreement entered in 2023, aimed at distributing high-efficiency solar panels across the Solara Belt region."""
     prompt = """[S1] Good morning, Jamie Zhang, Taylor Kim, representatives of NovaSpire Inc. and HelixCorp Ltd., and members of their respective organizations. Thank you for joining this mediation session. My role is to facilitate a structured, neutral conversation aimed at resolving the disputes arising from your partnership on the SmartWeave project."""
     # Path to the audio prompt file
-    audio_prompt_path = os.path.join("voices", "Cora.wav")
+    audio_prompt_path = os.path.join("voices", "Alice.wav")
 
-    # Generate the audio
-    output_file = generate_audio_from_prompt(audio_prompt_path, voice_sample_text, prompt)
-    if output_file:
-        logging.info(f"🎉 Audio generation completed successfully. Output saved to: {output_file}")
+    voice_prompts = [
+        "Good morning, Aria Venn and Kael Thorne, and thank you for being here today. My role as the mediator is to facilitate a structured and respectful dialogue between NovaTech Solutions and ZenCorp Industries to address the unresolved issues stemming from your supply contract dispute. I am committed to maintaining neutrality throughout this process, ensuring that both parties have equal opportunity to present their perspectives without interruption or bias.",
+        "Good morning, Mediator, Kael Thorne, and thank you for being here today. I am Aria Venn, Head of Supply Chain at NovaTech Solutions, and I appreciate the opportunity to engage in this mediation process with ZenCorp Industries. My goal is to work collaboratively with both parties to resolve the outstanding issues stemming from our supply contract and find a resolution that respects the terms we agreed upon in 2021.",
+        "Kael Thorne, Director of Procurement at ZenCorp Industries, acknowledges the importance of resolving this matter collaboratively and emphasizes that ZenCorp’s actions were rooted in ensuring compliance with contractual obligations to protect both parties’ interests. While we understand NovaTech’s concerns regarding delayed shipments, our decision to withhold payment for the disputed batch was based on documented quality defects that directly impacted our production processes and incurred significant financial losses.",
+        "Thank you for your clarification, Kael. NovaTech fully understands ZenCorp’s concerns regarding the impact of quality defects on production schedules and financial planning. We recognize that our obligations under the contract include ensuring components meet agreed-upon specifications, and we are committed to addressing any gaps in compliance. However, we also need to ensure that our right to timely payment is not unduly compromised by disputes over deliverables that were already accounted for in the contractual terms.",
+        "Regarding invoice discrepancies, we will submit a comprehensive reconciliation of all outstanding invoices, including dates, quantities, and supporting delivery receipts. Any delays in processing were due to internal administrative challenges, which we are now addressing to avoid future disruptions. We also propose a temporary payment arrangement for the disputed batch: once the third-party review confirms compliance with quality standards, NovaTech is willing to accept a phased payment plan to align with ZenCorp’s operational timelines."
+    ]
+
+    voice_prompts = [
+        "ZenCorp Industries appreciates the mediator’s structured approach to resolving this matter and recognizes the value of collaborative problem-solving. We agree that a thorough examination of the quality defects is essential to determine whether our withholding of payment was justified under the contractual terms. To this end, we are prepared to cooperate fully by providing the requested documentation, including detailed records of defect assessments and their operational impact."
+    ]
+    for voice_prompt in voice_prompts:
+        output_file = generate_audio_from_prompt(audio_prompt_path, voice_sample_text, f"[S1] {voice_prompt}")
+        if output_file:
+            logging.info(f"🎉 Audio generation completed successfully. Output saved to: {output_file}")
+
+    # # Generate the audio
+    # output_file = generate_audio_from_prompt(audio_prompt_path, voice_sample_text, prompt)
+    # if output_file:
+    #     logging.info(f"🎉 Audio generation completed successfully. Output saved to: {output_file}")

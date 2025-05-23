@@ -128,5 +128,15 @@ if __name__ == "__main__":
         "An international arbitration panel featuring legal experts from both jurisdictions reviewing a third-party audit report, with holographic displays showing component defect analysis and payment reconciliation charts in multiple currencies"
     ]
 
+    test_prompts = [
+        "A tense boardroom meeting with executives from NovaTech Solutions (Lumina Republic) and Aether Industries (Zephyra Emirates), one of them is whispering in the ear of the other and that person has a surprised look on their face",
+        "An envelope labeled 'Confidential' sits on a desk with a man in a suit looking at it",
+    ]
+
+    test_prompts = [
+        "a law school mediation competitions with two groups of students on each side and a mediator in the middle engaging in dialog",
+        "two business women shaking hands after resolving a big dispute",
+    ]
+
     generated_files = generate_images(test_prompts)
 
