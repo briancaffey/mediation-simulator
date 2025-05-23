@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Partnership Agreement",
+    "description": "The original partnership agreement between NovaSpire and HelixCorp, outlining the terms and conditions of their collaboration on the SmartWeave project.",
+    "type": "Contract",
+    "filename": "partnership_agreement.md"
+  },
+  {
+    "name": "Patent Infringement Claim",
+    "description": "A letter from NovaSpire's lawyers to HelixCorp, alleging patent infringement and demanding that HelixCorp cease development of WeaveX.",
+    "type": "Letter",
+    "filename": "patent_infringement_claim.md"
+  },
+  {
+    "name": "WeaveX Product Brochure",
+    "description": "A marketing brochure for WeaveX, highlighting its features and benefits.",
+    "type": "Marketing Material",
+    "filename": "weave_x_brochure.md"
+  }
+]

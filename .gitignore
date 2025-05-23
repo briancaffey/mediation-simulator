@@ -1,7 +1,4 @@
 # milvus data
 volumes/
 
-# Generated images
-flux/data/*.png
-
 .DS_Store

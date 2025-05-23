@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Supply Agreement 2021",
+    "description": "The original agreement outlining delivery terms, payment schedules, and quality standards.",
+    "type": "contract",
+    "filename": "supply-agreement.md"
+  },
+  {
+    "name": "Invoice #4567 (Q2 2023)",
+    "description": "NovaTech\u2019s invoice for components delivered in June 2023, marked as unpaid by Zenith.",
+    "type": "financial document",
+    "filename": "invoice-4567.md"
+  },
+  {
+    "name": "Quality Report #X12",
+    "description": "Zenith\u2019s internal report citing defects in NovaTech\u2019s semiconductor batches.",
+    "type": "technical assessment",
+    "filename": "quality-report.md"
+  },
+  {
+    "name": "Payment Notice #8901",
+    "description": "Zenith\u2019s formal notice to NovaTech regarding disputed payment terms and delays.",
+    "type": "financial dispute",
+    "filename": "payment-notice.md"
+  }
+]

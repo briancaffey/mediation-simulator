@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Supply Agreement Between NovaTech Industries and Aurora Components",
+    "description": "Outlines delivery terms, quality standards, and penalty clauses for non-compliance.",
+    "type": "Contract",
+    "filename": "supply_agreement.md"
+  },
+  {
+    "name": "Delivery Logs and Compliance Reports",
+    "description": "Detailed records of shipment dates, quantities, and quality inspection results.",
+    "type": "Operational Records",
+    "filename": "delivery_logs.md"
+  },
+  {
+    "name": "Correspondence Between Parties (2023\u20132024)",
+    "description": "Emails documenting disputes over delivery delays, payment disagreements, and quality issues.",
+    "type": "Email/Communication Logs",
+    "filename": "correspondence.md"
+  },
+  {
+    "name": "Third-Party Inspection Reports",
+    "description": "Independent evaluations of Aurora\u2019s components for compliance with NovaTech\u2019s specifications.",
+    "type": "Quality Assurance Report",
+    "filename": "inspection_reports.md"
+  }
+]

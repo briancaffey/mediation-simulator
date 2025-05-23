@@ -7,13 +7,17 @@ from datetime import datetime
 import random
 
 def get_random_cover_image():
-    """Return a random cover image URL from Unsplash."""
+    """Return a random cover image from the local flux/data directory."""
     images = [
-        "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&auto=format&fit=crop&q=60",
-        "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&auto=format&fit=crop&q=60",
-        "https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&auto=format&fit=crop&q=60",
-        "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&auto=format&fit=crop&q=60",
-        "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&auto=format&fit=crop&q=60"
+        "flux/data/1747700517310.png",
+        "flux/data/1747960956975.png",
+        "flux/data/1747960939727.png",
+        "flux/data/1747960922365.png",
+        "flux/data/1747960904999.png",
+        "flux/data/1747960905066.png",
+        "flux/data/1747960887710.png",
+        "flux/data/1747960870512.png",
+        "flux/data/1747960853301.png"
     ]
     return random.choice(images)
 

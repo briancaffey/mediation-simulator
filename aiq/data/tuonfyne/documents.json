@@ -1,0 +1,20 @@
+[
+  {
+    "name": "NovaTech_Aurora_Supply_Contract",
+    "description": "The original supply agreement outlining delivery timelines, quality standards, and penalty clauses for non-compliance.",
+    "type": "contract",
+    "filename": "nova-tech-aurora-supply-contract.md"
+  },
+  {
+    "name": "Email_Exchange_November_2023",
+    "description": "A series of emails between Kael Varen and Zara Lin discussing delayed shipments and quality concerns.",
+    "type": "correspondence",
+    "filename": "email-exchange-november-2023.md"
+  },
+  {
+    "name": "Quality_Control_Report_July_2024",
+    "description": "NovaTech\u2019s internal report detailing defects in Aurora\u2019s components and the cost of rework.",
+    "type": "inspection report",
+    "filename": "quality-control-report-july-2024.md"
+  }
+]

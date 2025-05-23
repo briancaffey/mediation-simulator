@@ -174,5 +174,5 @@ cython_debug/
 .pypirc
 
 # Data files for case generation
-data/*
+# data/*
 !data/.gitkeep

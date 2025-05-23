@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Supply Agreement (2023)",
+    "description": "The original contract outlining terms of supply, payment schedules, quality control standards, and dispute resolution mechanisms.",
+    "type": "Contract",
+    "filename": "SupplyAgreement.md"
+  },
+  {
+    "name": "Delivery Confirmation Note (April 2025)",
+    "description": "A record of NovaTech\u2019s delivery of components to Virex, including timestamps and quality inspection results.",
+    "type": "Correspondence",
+    "filename": "DeliveryNote.md"
+  },
+  {
+    "name": "Quality Inspection Report (June 2025)",
+    "description": "A third-party assessment of component quality submitted by Virex to NovaTech, highlighting discrepancies in performance metrics.",
+    "type": "Technical Report",
+    "filename": "QualityReport.md"
+  },
+  {
+    "name": "Email Exchange (July 2025)",
+    "description": "A series of emails between the parties discussing payment disputes and technical support requests.",
+    "type": "Correspondence",
+    "filename": "EmailExchange.md"
+  }
+]

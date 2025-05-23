@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Solar Nexus Licensing Agreement (2021)",
+    "description": "Outlines the terms of Nova\u2019s use of HelioTech\u2019s IP, including royalty rates, exclusivity clauses, and dispute resolution mechanisms.",
+    "type": "Contract",
+    "filename": "Solar_Nexus_Licensing_Agreement.md"
+  },
+  {
+    "name": "Email Correspondence (April\u2013June 2023)",
+    "description": "Contains emails between Aria Voss and Kaelen Rho discussing production delays, royalty disputes, and allegations of IP misuse.",
+    "type": "Communication Records",
+    "filename": "NovaHelio_Email_Correspondence.md"
+  },
+  {
+    "name": "Patent Registration Certificate (HelioTech)",
+    "description": "Official documentation proving HelioTech\u2019s ownership of the photovoltaic cell design used in the dispute.",
+    "type": "Legal Documentation",
+    "filename": "HelioTech_Patent_Registration.md"
+  },
+  {
+    "name": "Expert Report on Technology Origin",
+    "description": "An independent analysis claiming Nova\u2019s technology was developed without reliance on HelioTech\u2019s IP.",
+    "type": "Technical Analysis",
+    "filename": "NovaSolar_Origin_Report.md"
+  }
+]

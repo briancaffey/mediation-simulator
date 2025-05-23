@@ -371,7 +371,7 @@
                     try {
                         if (this.currentCaseId) {
                             // Fetch individual case data
-                            const response = await fetch(`/aiq/data/${this.currentCaseId}/mediation_state.yaml`);
+                            const response = await fetch(`aiq/data/${this.currentCaseId}/mediation_state.yaml`);
                             if (!response.ok) {
                                 throw new Error(`HTTP error! status: ${response.status}`);
                             }
@@ -384,7 +384,7 @@
                             }
                         } else {
                             // Fetch all cases
-                            const response = await fetch('/aiq/data/all_cases.yml');
+                            const response = await fetch('aiq/data/all_cases.yml');
                             if (!response.ok) {
                                 throw new Error(`HTTP error! status: ${response.status}`);
                             }

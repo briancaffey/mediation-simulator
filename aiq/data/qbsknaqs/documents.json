@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Supply Agreement",
+    "description": "Original 2021 contract outlining delivery terms, payment schedules, and quality standards.",
+    "type": "contract",
+    "filename": "supply-agreement.md"
+  },
+  {
+    "name": "Payment Invoices",
+    "description": "Records of overdue payments NovaTech allegedly withheld from Aether.",
+    "type": "financial records",
+    "filename": "payment-invoices.md"
+  },
+  {
+    "name": "Email Correspondence",
+    "description": "Emails between Jordan Lee and Amina Khaled discussing delays and disputes.",
+    "type": "communication logs",
+    "filename": "email-correspondence.md"
+  },
+  {
+    "name": "Quality Audit Report",
+    "description": "Third-party audit report highlighting defects in Aether’s delivered components.",
+    "type": "compliance report",
+    "filename": "quality-audit-report.md"
+  }
+]
