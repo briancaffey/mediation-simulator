@@ -127,6 +127,15 @@
 
                 <!-- Individual Case View -->
                 <div v-else key="detail">
+                    <!-- Case Title -->
+                    <div v-if="caseTitle" class="max-w-4xl mx-auto mb-8">
+                        <h1 class="text-3xl font-bold text-gray-900 text-center tracking-tight">
+                            <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                                {{ caseTitle }}
+                            </span>
+                        </h1>
+                    </div>
+
                     <!-- Case Summary -->
                     <div v-if="caseSummary" class="max-w-4xl mx-auto mb-8 bg-white rounded-lg shadow">
                         <button @click="isSummaryExpanded = !isSummaryExpanded"
@@ -326,6 +335,7 @@
                     rawYamlData: null,
                     events: [],
                     caseSummary: null,
+                    caseTitle: null,
                     isSummaryExpanded: false,
                     showFullText: true,
                     currentCaseId: null,
@@ -370,6 +380,7 @@
                             if (this.rawYamlData) {
                                 this.events = this.rawYamlData.events || [];
                                 this.caseSummary = this.rawYamlData.case_summary || null;
+                                this.caseTitle = this.rawYamlData.case_title || null;
                             }
                         } else {
                             // Fetch all cases

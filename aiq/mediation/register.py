@@ -188,6 +188,11 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         )
         turns_in_current_phase: int = 0
 
+        # conclusion state
+        requesting_party_conclusion: str = ""
+        responding_party_conclusion: str = ""
+        mediator_conclusion_settlement: str = ""
+
         agreement_reached: Optional[bool] = None
         agreement_terms: Optional[str] = None
 
@@ -266,6 +271,28 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 )  # Mediator typically starts joint discussion
             return state
 
+        # # Additional validation for caucus phase
+        # if state.current_phase == PHASE_CAUCUS:
+        #     if not state.is_in_caucus or not state.caucus_party:
+        #         # Initialize caucus if not already done
+        #         state.is_in_caucus = True
+        #         state.caucus_party = Party(name="REQUESTING_PARTY")
+        #         next_speaker = "MEDIATOR"  # Start with mediator
+        #     elif next_speaker not in ["MEDIATOR", state.caucus_party.name]:
+        #         next_speaker = "MEDIATOR"  # Default to mediator if invalid choice
+
+        # Handle conclusion phase
+        if state.current_phase == PHASE_CONCLUSION:
+            if not state.requesting_party_conclusion:
+                state.next_speaker_candidate = Party(name="REQUESTING_PARTY")
+            elif not state.responding_party_conclusion:
+                state.next_speaker_candidate = Party(name="RESPONDING_PARTY")
+            elif not state.mediator_conclusion_settlement:
+                state.next_speaker_candidate = Party(name="MEDIATOR")
+            else:
+                state.current_phase = PHASE_ENDED
+            return state
+
         # For all other phases, use the LLM to decide the next speaker
         # Check if we've reached max turns for the current phase
         if (
@@ -296,16 +323,6 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
 
         # Get the next speaker from the LLM
         next_speaker = await generate_clerk_decision(llm, state)
-
-        # Additional validation for caucus phase
-        if state.current_phase == PHASE_CAUCUS:
-            if not state.is_in_caucus or not state.caucus_party:
-                # Initialize caucus if not already done
-                state.is_in_caucus = True
-                state.caucus_party = Party(name="REQUESTING_PARTY")
-                next_speaker = "MEDIATOR"  # Start with mediator
-            elif next_speaker not in ["MEDIATOR", state.caucus_party.name]:
-                next_speaker = "MEDIATOR"  # Default to mediator if invalid choice
 
         state.next_speaker_candidate = Party(name=next_speaker)
 

@@ -61,6 +61,8 @@ Consider the following factors:
 
 {phase_constraints.get(state.current_phase, '')}
 
+Do not choose a speak who has just spoken in the last turn.
+
 You must respond with EXACTLY one of these three options:
 - "MEDIATOR"
 - "REQUESTING_PARTY"
