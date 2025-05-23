@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/briancaffey/mediation-simulator/compare/v1.3.0...v1.4.0) (2025-05-23)
+
+
+### Features
+
+* **cases:** regenerate mediation for all cases on demo site ([5f8a25e](https://github.com/briancaffey/mediation-simulator/commit/5f8a25ed87b643b1618b68e38c877a13c6a4cd36))
+* **readme:** add x post ([55b542a](https://github.com/briancaffey/mediation-simulator/commit/55b542a0e304499e6e82bddaacfe97bd3ad00608))
+
 ## [1.3.0](https://github.com/briancaffey/mediation-simulator/compare/v1.2.0...v1.3.0) (2025-05-23)
 
 
