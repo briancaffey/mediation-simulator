@@ -474,9 +474,14 @@ async def case_generation_workflow(
 
             Example format:
             [
-                "A professional business meeting room with two executives in formal suits discussing documents",
-                "A modern office building exterior with corporate signage",
-                "A courtroom with judge's bench and legal professionals in formal attire"
+                "A tense boardroom meeting with executives in tailored suits, one group seated at a long mahogany table reviewing legal documents, while others stand presenting charts on a large LED display, natural light streaming through floor-to-ceiling windows",
+                "A high-tech manufacturing facility with automated assembly lines, workers in safety gear monitoring quality control stations, and digital displays showing production metrics, capturing the industrial scale of operations",
+                "A modern courtroom with a judge in black robes presiding from an elevated bench, lawyers in formal attire presenting evidence on large screens, and a diverse jury panel seated in the gallery, all under dramatic lighting",
+                "A corporate headquarters lobby featuring a grand staircase, reception desk with security personnel, and digital displays showing company achievements, with professionals in business attire entering and exiting",
+                "A secure document storage room with rows of filing cabinets, a large digital archive system, and a team of paralegals carefully organizing and digitizing case materials under bright task lighting",
+                "A mediation room with a circular table, neutral decor, and comfortable seating for all parties, featuring a professional mediator facilitating discussion while participants review settlement documents",
+                "An outdoor construction site with heavy machinery, safety barriers, and workers in hard hats inspecting blueprints, showing the physical location central to the dispute",
+                "A sophisticated data center with server racks, monitoring stations, and IT professionals analyzing network security logs, representing the technological aspects of the case"
             ]"""
             ),
             HumanMessage(
@@ -497,8 +502,8 @@ async def case_generation_workflow(
             # Save the prompts to a JSON file
             case_dir = Path(config.data_dir) / state["case_id"]
             prompts_file = case_dir / "image_prompts.json"
-            with open(prompts_file, "w") as f:
-                json.dump(prompts, f, indent=2)
+            with open(prompts_file, "w", encoding='utf-8') as f:
+                json.dump(prompts, f, indent=2, ensure_ascii=False)
             logger.info(f"✅ Saved image prompts to {prompts_file}")
 
             return {**state, "image_prompts": prompts}
@@ -594,13 +599,13 @@ async def case_generation_workflow(
 
         # Save the case description to a markdown file
         output_file = case_dir / "initial_case_description.md"
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding='utf-8') as f:
             f.write(output)
 
         # Save the documents to a JSON file
         documents_file = case_dir / "documents.json"
-        with open(documents_file, "w") as f:
-            json.dump(documents, f, indent=2)
+        with open(documents_file, "w", encoding='utf-8') as f:
+            json.dump(documents, f, indent=2, ensure_ascii=False)
 
         logger.info(f"💾 Saved case description to {output_file}")
         logger.info(f"💾 Saved documents to {documents_file}")

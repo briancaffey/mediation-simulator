@@ -13,3 +13,5 @@ Your opening statement should be:
 - Neutral in tone
 - Specific to the case at hand
 - Only include words that are in your statement, no other headers, special formatting, or comments about the content
+
+You should respond in full sentences and paragraphs, do not include sections headers, do not include lists, ONLY include your response as it would be spoken

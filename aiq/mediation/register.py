@@ -271,18 +271,9 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 )  # Mediator typically starts joint discussion
             return state
 
-        # # Additional validation for caucus phase
-        # if state.current_phase == PHASE_CAUCUS:
-        #     if not state.is_in_caucus or not state.caucus_party:
-        #         # Initialize caucus if not already done
-        #         state.is_in_caucus = True
-        #         state.caucus_party = Party(name="REQUESTING_PARTY")
-        #         next_speaker = "MEDIATOR"  # Start with mediator
-        #     elif next_speaker not in ["MEDIATOR", state.caucus_party.name]:
-        #         next_speaker = "MEDIATOR"  # Default to mediator if invalid choice
-
         # Handle conclusion phase
         if state.current_phase == PHASE_CONCLUSION:
+            # Strict sequence: requesting party -> responding party -> mediator -> end
             if not state.requesting_party_conclusion:
                 state.next_speaker_candidate = Party(name="REQUESTING_PARTY")
             elif not state.responding_party_conclusion:
@@ -290,6 +281,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             elif not state.mediator_conclusion_settlement:
                 state.next_speaker_candidate = Party(name="MEDIATOR")
             else:
+                # All conclusions are complete, end the mediation
                 state.current_phase = PHASE_ENDED
             return state
 
@@ -301,15 +293,11 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         ):
             # Transition to next phase
             if state.current_phase == PHASE_JOINT_DISCUSSION:
-                # Temporary: skip caucus phase
-                #     state.current_phase = PHASE_CAUCUS
-                #     state.is_in_caucus = True
-                #     state.caucus_party = Party(name="REQUESTING_PARTY")
-                # elif state.current_phase == PHASE_CAUCUS:
                 state.current_phase = PHASE_NEGOTIATION
                 state.is_in_caucus = False
                 state.caucus_party = None
             elif state.current_phase == PHASE_NEGOTIATION:
+                state.next_speaker_candidate = Party(name="MEDIATOR")
                 state.current_phase = PHASE_CONCLUSION
             elif state.current_phase == PHASE_CONCLUSION:
                 state.current_phase = PHASE_ENDED
@@ -360,6 +348,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             )
         elif state.current_phase == PHASE_CONCLUSION:
             content = await generate_mediator_conclusion(llm, state)
+            state.mediator_conclusion_settlement = content
             summary = await generate_summary(
                 llm, content, "This is a mediator's response during conclusion."
             )
@@ -418,6 +407,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             )
         elif state.current_phase == PHASE_CONCLUSION:
             content = await generate_conclusion_requesting_party(llm, state)
+            state.requesting_party_conclusion = content
             summary = await generate_summary(
                 llm, content, "This is a requesting party's response during conclusion."
             )
@@ -473,6 +463,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             )
         elif state.current_phase == PHASE_CONCLUSION:
             content = await generate_conclusion_responding_party(llm, state)
+            state.responding_party_conclusion = content
             summary = await generate_summary(
                 llm,
                 content,
