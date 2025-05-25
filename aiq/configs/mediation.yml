@@ -1,5 +1,12 @@
 general:
   use_uvloop: true
+  front_end:
+    _type: fastapi
+    endpoints:
+      - path: /case/{case_id}
+        method: GET
+        description: Gets the mediation case for the given case ID.
+        function_name: get_mediation_case
   telemetry:
     enabled: false
     tracing:
@@ -26,6 +33,11 @@ llms:
     max_tokens: 10000
     temperature: 0.7
 
+memory:
+  redis_memory:
+    _type: redis_memory
+    connection_url: redis://localhost:6379/0
+
 functions:
   case_document_rag:
     _type: case_document_rag
@@ -40,6 +52,8 @@ functions:
       - case_document_rag
     verbose: true
     max_iterations: 5
+  get_mediation_case:
+    _type: server/get_mediation_case
 
 embedders:
   nv-embedqa-e5-v5:

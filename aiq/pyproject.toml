@@ -9,7 +9,9 @@ root = ".."
 packages = [
     "aiq_simple_calculator",
     "case_generation",
-    "mediation"
+    "mediation",
+    "server",
+    "redis"
 ]
 
 [project]
@@ -31,7 +33,9 @@ dependencies = [
     "langchain-nvidia-ai-endpoints",
     "soundfile",
     "black",
-    "pyyaml"
+    "pyyaml",
+    "langchain-redis",
+    "redis"
 ]
 requires-python = ">=3.11,<3.13"
 
@@ -39,6 +43,8 @@ requires-python = ">=3.11,<3.13"
 aiq_simple_calculator = "aiq_simple_calculator.register"
 case_generation = "case_generation.register"
 mediation = "mediation.register"
+server = "server.register"
+redis = "redis.register"
 
 [tool.hatch.metadata]
 allow-direct-references = true

@@ -101,6 +101,8 @@ async def case_generation_workflow(
     )
     logger.info("✅ LLM initialized: %s", llm)
 
+    memory = builder.get_memory_client("redis_memory")
+
     class CaseGenerationState(TypedDict):
         """ "
         Case generation state
@@ -161,6 +163,9 @@ async def case_generation_workflow(
 
         # Ensure we have content from the response
         content = response.content if hasattr(response, "content") else str(response)
+
+        # save the case description in memory
+        await memory.save_case_description(content, state["case_id"])
 
         # Update the state with the case description
         return {
@@ -647,6 +652,9 @@ async def case_generation_workflow(
                 for doc in (out.get("documents") or [])
             ],
         }
+
+        logger.info(f"🧠 Saving case state to memory: {state_dict}")
+        await memory.save_case_state(state_dict, case_id)
 
         with open(state_file, "w", encoding="utf-8") as f:
             yaml.dump(
