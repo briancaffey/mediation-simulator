@@ -43,6 +43,16 @@ async def redis_memory(config: RedisMemoryConfig, builder: Builder):
                 return {}
             return json.loads(state)
 
+        async def get_session_data(self, case_id: str, session_id: str) -> dict:
+            """
+            gets the session data using the <case_id>_<session_id>_session_data as the redis key as json
+            """
+            client = await self.get_client(session_id)
+            messages = await client.aget_messages()
+            if messages is None:
+                return []
+            return json.loads(messages)
+
         async def get_client(self, session_id: str) -> RedisChatMessageHistory:
             conn = RedisChatMessageHistory(session_id=session_id, redis_url=self._conn_url)
             return conn

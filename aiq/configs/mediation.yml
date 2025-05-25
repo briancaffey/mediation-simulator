@@ -7,6 +7,14 @@ general:
         method: GET
         description: Gets the mediation case for the given case ID.
         function_name: get_mediation_case
+      - path: /case/{case_id}/session/{session_id}
+        method: GET
+        description: Gets the mediation session data for the given case ID and session ID.
+        function_name: get_mediation_session
+      - path: /case/{case_id}/session/{session_id}/send
+        method: POST
+        description: Sends a message to the mediation session for the given case ID and session ID.
+        function_name: send_message_to_mediation_session
   telemetry:
     enabled: false
     tracing:
@@ -52,8 +60,14 @@ functions:
       - case_document_rag
     verbose: true
     max_iterations: 5
+
+  # server route functions
   get_mediation_case:
     _type: server/get_mediation_case
+  get_mediation_session:
+    _type: server/get_mediation_session
+  send_message_to_mediation_session:
+    _type: server/send_message_to_mediation_session
 
 embedders:
   nv-embedqa-e5-v5:
