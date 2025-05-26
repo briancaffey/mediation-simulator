@@ -72,7 +72,7 @@ Do not include any other text, explanations, or formatting in your response."""
     )
 
     human_message = HumanMessage(
-        content=f"""Current mediation phase: {state.current_phase.name}
+        content=f"""Current mediation phase: {state.current_phase}
 Current turn number: {state.turn_number}
 Turns in current phase: {state.turns_in_current_phase}
 

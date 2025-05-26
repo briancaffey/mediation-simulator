@@ -27,11 +27,8 @@ def serialize_pydantic(obj: Any) -> Union[Dict, List, str, Any]:
             serialized["additional_kwargs"] = obj.additional_kwargs
         return serialized
     elif hasattr(obj, "model_dump"):
-        # Handle special cases for MediationPhase and Party - return just the name string
-        if hasattr(obj, "name"):  # For MediationPhase and Party
-            return obj.name
         # Handle MediationEvent specially
-        elif hasattr(obj, "event_id"):  # For MediationEvent
+        if hasattr(obj, "event_id"):  # For MediationEvent
             return {
                 "event_id": str(obj.event_id),  # Ensure UUID is converted to string
                 "timestamp": (
@@ -39,16 +36,8 @@ def serialize_pydantic(obj: Any) -> Union[Dict, List, str, Any]:
                     if isinstance(obj.timestamp, datetime)
                     else str(obj.timestamp)
                 ),
-                "mediation_phase": (
-                    obj.mediation_phase.name
-                    if hasattr(obj.mediation_phase, "name")
-                    else str(obj.mediation_phase)
-                ),
-                "speaker": (
-                    obj.speaker.name
-                    if hasattr(obj.speaker, "name")
-                    else str(obj.speaker)
-                ),
+                "mediation_phase": str(obj.mediation_phase),
+                "speaker": str(obj.speaker),
                 "content": str(obj.content),
                 "summary": str(obj.summary),
                 "token_count": int(obj.token_count),

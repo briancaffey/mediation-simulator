@@ -45,7 +45,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     from utils.graphviz import save_workflow_visualization
     from utils.serialize import serialize_pydantic
     from utils.yaml import save_state_to_yaml
-    from .types import Party, MediationPhase
+    from .types import PartyType, MediationPhaseType
     from .prompts.prompts import generate_summary
     from .prompts.clerk import generate_clerk_decision
     from .prompts.responding import (
@@ -76,31 +76,15 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     )
     logger.info("✅ LLM initialized: %s", llm)
 
-    # Get the case query agent
-    # case_query_agent = builder.get_function("case_query_agent")
-
-
-    # Define phase instances
-    PHASE_OPENING = MediationPhase(name="OPENING_STATEMENTS")
-    PHASE_JOINT_DISCUSSION = MediationPhase(name="JOINT_DISCUSSION_INFO_GATHERING")
-    PHASE_CAUCUS = MediationPhase(name="CAUCUSES")
-    PHASE_NEGOTIATION = MediationPhase(name="NEGOTIATION_BARGAINING")
-    PHASE_CONCLUSION = MediationPhase(name="CONCLUSION_CLOSING_STATEMENTS")
-    PHASE_ENDED = MediationPhase(name="ENDED")
+    # Define phase constants
+    PHASE_OPENING = "OPENING_STATEMENTS"
+    PHASE_JOINT_DISCUSSION = "JOINT_DISCUSSION_INFO_GATHERING"
+    PHASE_CAUCUS = "CAUCUSES"
+    PHASE_NEGOTIATION = "NEGOTIATION_BARGAINING"
+    PHASE_CONCLUSION = "CONCLUSION_CLOSING_STATEMENTS"
+    PHASE_ENDED = "ENDED"
 
     # --- Pydantic Models for State ---
-
-    class MediationEvent(BaseModel):
-        """
-        TODO: remove this in favor of using the messages field
-        """
-        event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-        timestamp: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
-        mediation_phase: MediationPhase
-        speaker: Party
-        content: str
-        summary: str
-        token_count: int = 0  # Placeholder for now
 
     class MediationState(BaseModel):
         """State for the mediation workflow"""
@@ -129,7 +113,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         requesting_party_opening_statement: str = ""
         responding_party_opening_statement: str = ""
 
-        current_phase: MediationPhase = Field(default=PHASE_OPENING)
+        current_phase: MediationPhaseType = Field(default=PHASE_OPENING)
 
         messages: List[BaseMessage] = Field(default_factory=list)
 
@@ -137,17 +121,13 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
 
         # For clerk processing
         last_utterance_content: Optional[str] = None
-        last_utterance_speaker: Optional[Party] = None
+        last_utterance_speaker: Optional[PartyType] = None
 
         # For clerk decision-making
-        next_speaker_candidate: Optional[Party] = None
-
-        is_in_caucus: bool = False
-        caucus_party: Optional[Party] = None
+        next_speaker_candidate: Optional[PartyType] = None
 
         # Configuration for phase transitions
-        # TODO: increase phase length. Temporarily using shortened phases for debugging
-        max_turns_per_phase: Dict[MediationPhase, int] = Field(
+        max_turns_per_phase: Dict[str, int] = Field(
             default_factory=lambda: {
                 PHASE_OPENING: 3,
                 PHASE_JOINT_DISCUSSION: 5,
@@ -162,7 +142,6 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         requesting_party_conclusion: str = ""
         responding_party_conclusion: str = ""
         mediator_conclusion_settlement: str = ""
-
 
     async def initial(state: MediationState):
         """Load the parts of the case data from data_dir based on the case_id that is passed in"""
@@ -210,29 +189,27 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         if state.current_phase == PHASE_OPENING:
             # Check opening statements in order: mediator, requesting party, responding party
             if not state.mediator_opening_statement:
-                state.next_speaker_candidate = Party(name="MEDIATOR")
+                state.next_speaker_candidate = "MEDIATOR"
             elif not state.requesting_party_opening_statement:
-                state.next_speaker_candidate = Party(name="REQUESTING_PARTY")
+                state.next_speaker_candidate = "REQUESTING_PARTY"
             elif not state.responding_party_opening_statement:
-                state.next_speaker_candidate = Party(name="RESPONDING_PARTY")
+                state.next_speaker_candidate = "RESPONDING_PARTY"
             else:
                 # All opening statements are complete, transition to joint discussion
                 state.current_phase = PHASE_JOINT_DISCUSSION
                 state.turns_in_current_phase = 0
-                state.next_speaker_candidate = Party(
-                    name="MEDIATOR"
-                )  # Mediator typically starts joint discussion
+                state.next_speaker_candidate = "MEDIATOR"  # Mediator typically starts joint discussion
             return state
 
         # Handle conclusion phase
         if state.current_phase == PHASE_CONCLUSION:
             # Strict sequence: requesting party -> responding party -> mediator -> end
             if not state.requesting_party_conclusion:
-                state.next_speaker_candidate = Party(name="REQUESTING_PARTY")
+                state.next_speaker_candidate = "REQUESTING_PARTY"
             elif not state.responding_party_conclusion:
-                state.next_speaker_candidate = Party(name="RESPONDING_PARTY")
+                state.next_speaker_candidate = "RESPONDING_PARTY"
             elif not state.mediator_conclusion_settlement:
-                state.next_speaker_candidate = Party(name="MEDIATOR")
+                state.next_speaker_candidate = "MEDIATOR"
             else:
                 # All conclusions are complete, end the mediation
                 state.current_phase = PHASE_ENDED
@@ -247,25 +224,21 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             # Transition to next phase
             if state.current_phase == PHASE_JOINT_DISCUSSION:
                 state.current_phase = PHASE_NEGOTIATION
-                state.is_in_caucus = False
-                state.caucus_party = None
             elif state.current_phase == PHASE_NEGOTIATION:
-                state.next_speaker_candidate = Party(name="MEDIATOR")
+                state.next_speaker_candidate = "MEDIATOR"
                 state.current_phase = PHASE_CONCLUSION
             elif state.current_phase == PHASE_CONCLUSION:
                 state.current_phase = PHASE_ENDED
                 return state
 
             state.turns_in_current_phase = 0
-            state.next_speaker_candidate = Party(
-                name="MEDIATOR"
-            )  # Mediator typically starts new phases
+            state.next_speaker_candidate = "MEDIATOR"  # Mediator typically starts new phases
             return state
 
         # Get the next speaker from the LLM
         next_speaker = await generate_clerk_decision(llm, state)
 
-        state.next_speaker_candidate = Party(name=next_speaker)
+        state.next_speaker_candidate = next_speaker
 
         # Increment counters
         state.turns_in_current_phase += 1
@@ -276,7 +249,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     async def mediator_node(state: MediationState):
         """The mediator node generates the mediator's response"""
         logger.info("⚖️ [MEDIATOR]: Mediator node called")
-        state.last_utterance_speaker = Party(name="MEDIATOR")
+        state.last_utterance_speaker = "MEDIATOR"
 
         if (
             state.current_phase == PHASE_OPENING
@@ -325,7 +298,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                     additional_kwargs={
                         "speaker": "MEDIATOR",
                         "is_user": False,
-                        "phase": state.current_phase.name,
+                        "phase": state.current_phase,
                         "summary": summary,
                     },
                 )
@@ -341,16 +314,12 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     async def requesting_party_node(state: MediationState):
         """The requesting party node generates responses"""
         logger.info("🌝 Requesting party node called")
-        state.last_utterance_speaker = Party(name="REQUESTING_PARTY")
+        state.last_utterance_speaker = "REQUESTING_PARTY"
 
         if (
             state.current_phase == PHASE_OPENING
             and not state.requesting_party_opening_statement
         ):
-            # Get case information using the case query agent
-            # content = await case_query_agent.acall_invoke(
-            #     query="What was the result of the independent inspection?"
-            # )
             content = await generate_requesting_opening_statement(llm, state)
             state.requesting_party_opening_statement = content
             summary = await generate_summary(
@@ -394,7 +363,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                     additional_kwargs={
                         "speaker": "REQUESTING_PARTY",
                         "is_user": False,
-                        "phase": state.current_phase.name,
+                        "phase": state.current_phase,
                         "summary": summary,
                     },
                 )
@@ -410,7 +379,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     async def responding_party_node(state: MediationState):
         """The responding party node generates responses"""
         logger.info("🌚 Responding party node called")
-        state.last_utterance_speaker = Party(name="RESPONDING_PARTY")
+        state.last_utterance_speaker = "RESPONDING_PARTY"
 
         if (
             state.current_phase == PHASE_OPENING
@@ -461,7 +430,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                     additional_kwargs={
                         "speaker": "RESPONDING_PARTY",
                         "is_user": False,
-                        "phase": state.current_phase.name,
+                        "phase": state.current_phase,
                         "summary": summary,
                     },
                 )
@@ -493,7 +462,6 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     workflow.add_edge("requesting_party", "clerk")
     workflow.add_edge("responding_party", "clerk")
 
-
     # Add conditional edge from clerk
     workflow.add_conditional_edges(
         "clerk",
@@ -501,13 +469,13 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
             "end"
             if x.current_phase == PHASE_ENDED
             # route to END if the next speaker is the user
-            or (x.user_role == "REQUESTING_PARTY" and x.next_speaker_candidate.name == "REQUESTING_PARTY")
-            or (x.user_role == "RESPONDING_PARTY" and x.next_speaker_candidate.name == "RESPONDING_PARTY")
+            or (x.user_role == "REQUESTING_PARTY" and x.next_speaker_candidate == "REQUESTING_PARTY")
+            or (x.user_role == "RESPONDING_PARTY" and x.next_speaker_candidate == "RESPONDING_PARTY")
             else {
                 "MEDIATOR": "mediator",
                 "REQUESTING_PARTY": "requesting_party",
                 "RESPONDING_PARTY": "responding_party",
-            }[x.next_speaker_candidate.name]
+            }[x.next_speaker_candidate]
         ),
     )
 
@@ -553,8 +521,9 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 turn_number=0,
                 turns_in_current_phase=0,
             )
-        elif method == "POST":
 
+        # if using the workflow via API, then we load the state from redis memory
+        elif method == "POST":
             # fetch the state from redis memory
             case_data = await memory.get_case_state(case_id)
 
@@ -570,19 +539,41 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                     "Session ID is required, please provide session ID via --query when using the mediation workflow"
                 )
             logger.info(f"🔍 Session ID: {session_id}")
-
             role = query_params.get("role", "REQUESTING_PARTY")
 
-            # try to get the current session phase from redis memory, otherwise initialize redis values
-            current_phase = await memory.get_session_field(session_id, "current_phase")
-            if not current_phase:
-                current_phase = PHASE_OPENING.name
-                await memory.set_session_field(session_id, "current_phase", current_phase)
-            else:
-                # Decode bytes to string if needed
-                current_phase = current_phase.decode() if isinstance(current_phase, bytes) else current_phase
+            # get the mediation_session_state from redis memory
+            mediation_session_state = await memory.get_session_state(session_id)
 
-            current_phase = MediationPhase(name=current_phase)
+            # if the mediation_session_state is not found, then we initialize it
+            if not mediation_session_state:
+                mediation_session_state = {}
+                mediation_session_state["role"] = role
+                mediation_session_state["current_phase"] = PHASE_OPENING
+                mediation_session_state["turn_number"] = 0
+                mediation_session_state["turns_in_current_phase"] = 0
+                mediation_session_state["case_summary"] = ""
+
+                # names
+                mediation_session_state["case_title"] = ""
+                mediation_session_state["requesting_party_company"] = ""
+                mediation_session_state["requesting_party_representative"] = ""
+                mediation_session_state["responding_party_company"] = ""
+                mediation_session_state["responding_party_representative"] = ""
+
+                # opening statements
+                mediation_session_state["mediator_opening_statement"] = ""
+                mediation_session_state["requesting_party_opening_statement"] = ""
+                mediation_session_state["responding_party_opening_statement"] = ""
+
+                # conclusion statements
+                mediation_session_state["mediator_conclusion_settlement"] = ""
+                mediation_session_state["requesting_party_conclusion"] = ""
+                mediation_session_state["responding_party_conclusion"] = ""
+
+                mediation_session_state["last_utterance_content"] = ""
+
+                # update the mediation_session_state with the new role
+                mediation_session_state["role"] = role
 
             # the input_message will be empty on the first request if there are no messages in redis memory
             # if the input_message is not empty, then we add the user message to redis memory
@@ -595,7 +586,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                             additional_kwargs={
                                 "speaker": role,
                                 "is_user": True,
-                                "phase": current_phase.name,
+                                "phase": mediation_session_state["current_phase"],
                             },
                         )
                     ],
@@ -616,9 +607,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 "responding_party_representative", ""
             )
 
-            current_phase = case_data.get("current_phase", PHASE_OPENING.name)
-            CURRENT_PHASE = MediationPhase(name=current_phase)
-
+            current_phase = case_data.get("current_phase", PHASE_OPENING)
             messages = await memory.get_messages(session_id)
 
             initial_state = MediationState(
@@ -632,7 +621,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 responding_party_company=responding_party_company,
                 responding_party_representative=responding_party_representative,
                 messages=messages,
-                current_phase=CURRENT_PHASE,
+                current_phase=current_phase,
                 turn_number=0,
             )
 

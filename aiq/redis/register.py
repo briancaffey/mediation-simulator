@@ -46,6 +46,21 @@ async def redis_memory(config: RedisMemoryConfig, builder: Builder):
                 return {}
             return json.loads(state)
 
+        async def get_session_state(self, session_id: str) -> dict:
+            """
+            gets the session state using the <session_id>_session_state as the redis key as json
+            """
+            state = self.redis.get(f"session:{session_id}:session_state")
+            if state is None:
+                return {}
+            return json.loads(state)
+
+        async def save_session_state(self, session_state: dict, session_id: str) -> None:
+            """
+            saves the session state using the <session_id>_session_state as the redis key as json
+            """
+            self.redis.set(f"session:{session_id}:session_state", json.dumps(session_state))
+
         async def get_session_data(self, case_id: str, session_id: str) -> dict:
             """
             gets the session data using the <case_id>_<session_id>_session_data as the redis key as json
