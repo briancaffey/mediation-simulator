@@ -579,6 +579,8 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 mediation_session_state["requesting_party_conclusion"] = mediation_session_state_from_memory.get("requesting_party_conclusion", "")
                 mediation_session_state["responding_party_conclusion"] = mediation_session_state_from_memory.get("responding_party_conclusion", "")
                 mediation_session_state["current_phase"] = mediation_session_state_from_memory.get("current_phase", PHASE_OPENING)
+                mediation_session_state["turn_number"] = mediation_session_state_from_memory.get("turn_number", 0)
+                mediation_session_state["turns_in_current_phase"] = mediation_session_state_from_memory.get("turns_in_current_phase", 0)
 
             # the input_message will be empty on the first request if there are no messages in redis memory
             # if the input_message is not empty, then we add the user message to redis memory
