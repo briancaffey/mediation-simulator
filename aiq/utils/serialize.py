@@ -4,6 +4,7 @@ Utility functions for serializing Pydantic models and other objects.
 
 from typing import Any, Dict, List, Union
 from datetime import datetime
+from langchain_core.messages import BaseMessage
 
 
 def serialize_pydantic(obj: Any) -> Union[Dict, List, str, Any]:
@@ -15,7 +16,17 @@ def serialize_pydantic(obj: Any) -> Union[Dict, List, str, Any]:
     Returns:
         The serialized object, with Pydantic models converted to dictionaries.
     """
-    if hasattr(obj, "model_dump"):
+    if isinstance(obj, BaseMessage):
+        # Handle LangChain messages
+        serialized = {
+            "type": obj.__class__.__name__,
+            "content": str(obj.content),
+        }
+        # Only include additional_kwargs if it's not empty
+        if obj.additional_kwargs:
+            serialized["additional_kwargs"] = obj.additional_kwargs
+        return serialized
+    elif hasattr(obj, "model_dump"):
         # Handle special cases for MediationPhase and Party - return just the name string
         if hasattr(obj, "name"):  # For MediationPhase and Party
             return obj.name

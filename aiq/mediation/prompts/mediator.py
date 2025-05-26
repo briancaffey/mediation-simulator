@@ -50,10 +50,10 @@ async def generate_joint_discussion_response(llm, state) -> str:
     system_message = SystemMessage(content=system_message_content)
 
     # Create a summary of recent events for context
-    recent_events = "\n".join(
+    recent_messages_summary = "\n".join(
         [
-            f"{event.speaker.name}: {event.summary}"
-            for event in state.events[-5:]  # Look at last 5 events for context
+            f"{message.additional_kwargs.get('speaker')}: {message.additional_kwargs.get('summary')}"
+            for message in state.messages[-5:]
         ]
     )
 
@@ -63,7 +63,7 @@ async def generate_joint_discussion_response(llm, state) -> str:
 {state.case_summary}
 
 Summary of recent conversation:
-{recent_events}
+{recent_messages_summary}
 
 Please provide your next response as the mediator. Focus on guiding the discussion, helping parties understand each other, and moving toward resolution."""
     )
@@ -91,10 +91,11 @@ async def generate_negotiation_mediator(llm, state) -> str:
     system_message = SystemMessage(content=system_message_content)
 
     # Create a summary of recent events for context
-    recent_events = "\n".join(
+    # Create a summary of recent events for context
+    recent_messages_summary = "\n".join(
         [
-            f"{event.speaker.name}: {event.summary}"
-            for event in state.events[-5:]  # Look at last 5 events for context
+            f"{message.additional_kwargs.get('speaker')}: {message.additional_kwargs.get('summary')}"
+            for message in state.messages[-5:]
         ]
     )
 
@@ -104,7 +105,7 @@ async def generate_negotiation_mediator(llm, state) -> str:
 {state.case_summary}
 
 Summary of recent conversation:
-{recent_events}
+{recent_messages_summary}
 
 Please provide your next response as the mediator. Focus on guiding the negotiation process, helping parties develop and evaluate concrete proposals, and moving toward a mutually acceptable agreement."""
     )
@@ -113,6 +114,7 @@ Please provide your next response as the mediator. Focus on guiding the negotiat
     messages = [system_message, human_message]
     response = await llm.ainvoke(messages)
     return response.content if hasattr(response, "content") else str(response)
+
 
 # mediator conclusion
 async def generate_mediator_conclusion(llm, state) -> str:
@@ -132,10 +134,10 @@ async def generate_mediator_conclusion(llm, state) -> str:
     system_message = SystemMessage(content=system_message_content)
 
     # Create a summary of recent events for context
-    recent_events = "\n".join(
+    recent_messages_summary = "\n".join(
         [
-            f"{event.speaker.name}: {event.summary}"
-            for event in state.events[-5:]  # Look at last 5 events for context
+            f"{message.additional_kwargs.get('speaker')}: {message.additional_kwargs.get('summary')}"
+            for message in state.messages[-5:]
         ]
     )
 
@@ -145,7 +147,7 @@ async def generate_mediator_conclusion(llm, state) -> str:
 {state.case_summary}
 
 Summary of recent conversation:
-{recent_events}
+{recent_messages_summary}
 
 Please provide your concluding remarks as the mediator. Focus on summarizing key points, formalizing any agreements reached, and providing clear next steps for the parties."""
     )

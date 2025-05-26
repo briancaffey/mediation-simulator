@@ -23,10 +23,10 @@ async def generate_clerk_decision(llm, state) -> str:
         A string indicating who should speak next: "MEDIATOR", "REQUESTING_PARTY", or "RESPONDING_PARTY"
     """
     # Create a summary of the conversation history
-    conversation_history = "\n".join(
+    recent_messages_summary = "\n".join(
         [
-            f"{event.speaker.name}: {event.summary}"
-            for event in state.events[-5:]  # Look at last 5 events for context
+            f"{message.additional_kwargs.get('speaker')}: {message.additional_kwargs.get('summary')}"
+            for message in state.messages[-5:]
         ]
     )
 
@@ -77,7 +77,7 @@ Current turn number: {state.turn_number}
 Turns in current phase: {state.turns_in_current_phase}
 
 Recent conversation history:
-{conversation_history}
+{recent_messages_summary}
 
 Based on this context, who should speak next? Respond with exactly one of: "MEDIATOR", "REQUESTING_PARTY", or "RESPONDING_PARTY"."""
     )
@@ -89,7 +89,7 @@ Based on this context, who should speak next? Respond with exactly one of: "MEDI
     # Validate the response
     valid_decisions = {"MEDIATOR", "REQUESTING_PARTY", "RESPONDING_PARTY"}
     if decision not in valid_decisions:
-        logger.warning(f"Invalid clerk decision: {decision}. Defaulting to MEDIATOR.")
+        logger.warning(f"⚠️ Invalid clerk decision: {decision}. Defaulting to MEDIATOR.")
         decision = "MEDIATOR"
 
     return decision

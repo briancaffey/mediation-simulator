@@ -2,6 +2,12 @@ general:
   use_uvloop: true
   front_end:
     _type: fastapi
+    cors:
+      allow_origins: ['*']
+      allow_methods:
+        - GET
+        - POST
+        - OPTIONS
     endpoints:
       - path: /case/{case_id}
         method: GET
@@ -40,6 +46,12 @@ llms:
     model_name: qwen3-8b
     max_tokens: 10000
     temperature: 0.7
+  mediation_llm:
+    _type: nim
+    base_url: http://192.168.5.96:1234/v1
+    model_name: qwen3-8b
+    max_tokens: 10000
+    temperature: 0.7
 
 memory:
   redis_memory:
@@ -66,8 +78,8 @@ functions:
     _type: server/get_mediation_case
   get_mediation_session:
     _type: server/get_mediation_session
-  send_message_to_mediation_session:
-    _type: server/send_message_to_mediation_session
+  # send_message_to_mediation_session:
+  #   _type: mediation
 
 embedders:
   nv-embedqa-e5-v5:
@@ -77,5 +89,5 @@ embedders:
 
 workflow:
   _type: mediation
-  llm_name: nim_llm
+  llm: mediation_llm
   data_dir: ./data

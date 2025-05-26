@@ -56,10 +56,10 @@ async def generate_joint_discussion_response(llm, state) -> str:
     system_message = SystemMessage(content=system_message_content)
 
     # Create a summary of recent events for context
-    recent_events = "\n".join(
+    recent_messages_summary = "\n".join(
         [
-            f"{event.speaker.name}: {event.summary}"
-            for event in state.events[-5:]  # Look at last 5 events for context
+            f"{message.additional_kwargs.get('speaker')}: {message.additional_kwargs.get('summary')}"
+            for message in state.messages[-5:]
         ]
     )
 
@@ -69,7 +69,7 @@ async def generate_joint_discussion_response(llm, state) -> str:
 {state.case_summary}
 
 Recent conversation:
-{recent_events}
+{recent_messages_summary}
 
 Please provide your next response as the requesting party. Focus on presenting your client's perspective clearly and engaging constructively with the other party."""
     )
@@ -97,10 +97,10 @@ async def generate_negotiation_requesting_party(llm, state) -> str:
     system_message = SystemMessage(content=system_message_content)
 
     # Create a summary of recent negotiation events for context
-    recent_events = "\n".join(
+    recent_messages_summary = "\n".join(
         [
-            f"{event.speaker.name}: {event.summary}"
-            for event in state.events[-5:]  # Look at last 5 events for context
+            f"{message.additional_kwargs.get('speaker')}: {message.additional_kwargs.get('summary')}"
+            for message in state.messages[-5:]
         ]
     )
 
@@ -110,7 +110,7 @@ async def generate_negotiation_requesting_party(llm, state) -> str:
 {state.case_summary}
 
 Recent negotiation:
-{recent_events}
+{recent_messages_summary}
 
 Please provide your next response as the requesting party. Focus on presenting clear proposals and engaging constructively in the negotiation process."""
     )
@@ -138,10 +138,10 @@ async def generate_conclusion_requesting_party(llm, state) -> str:
     system_message = SystemMessage(content=system_message_content)
 
     # Create a summary of recent events for context
-    recent_events = "\n".join(
+    recent_messages_summary = "\n".join(
         [
-            f"{event.speaker.name}: {event.summary}"
-            for event in state.events[-5:]  # Look at last 5 events for context
+            f"{message.additional_kwargs.get('speaker')}: {message.additional_kwargs.get('summary')}"
+            for message in state.messages[-5:]
         ]
     )
 
@@ -151,7 +151,7 @@ async def generate_conclusion_requesting_party(llm, state) -> str:
 {state.case_summary}
 
 Recent conversation:
-{recent_events}
+{recent_messages_summary}
 
 Please provide your concluding remarks as the requesting party. Focus on acknowledging any agreements reached, expressing appreciation for the process, and confirming your understanding of next steps."""
     )

@@ -25,7 +25,6 @@ class MediationWorkflowConfig(FunctionBaseConfig, name="mediation"):
     llm: LLMRef = "nim_llm"
     data_dir: str = "./data"
 
-
 @register_function(
     config_type=MediationWorkflowConfig, framework_wrappers=[LLMFrameworkEnum.LANGCHAIN]
 )
@@ -46,6 +45,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     from utils.graphviz import save_workflow_visualization
     from utils.serialize import serialize_pydantic
     from utils.yaml import save_state_to_yaml
+    from .types import Party, MediationPhase
     from .prompts.prompts import generate_summary
     from .prompts.clerk import generate_clerk_decision
     from .prompts.responding import (
@@ -67,55 +67,18 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         generate_conclusion_requesting_party as generate_conclusion_requesting_party,
     )
 
+    logger.info("🧠 Getting redis memory client")
+    memory = builder.get_memory_client("redis_memory")
+
     logger.info("🤖 Getting LLM with name: %s", config.llm)
     llm = await builder.get_llm(
         llm_name=config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN
     )
-    # use separate LLMs to simulate LLMs representing each party
-    # TODO: move these to tool configuration
-    # requesting_party_llm = await builder.get_llm(llm_name=config.requesting_party_llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-    # responding_party_llm = await builder.get_llm(llm_name=config.responding_party_llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
     logger.info("✅ LLM initialized: %s", llm)
 
     # Get the case query agent
-    case_query_agent = builder.get_function("case_query_agent")
+    # case_query_agent = builder.get_function("case_query_agent")
 
-    class Party(BaseModel):  # Using BaseModel to allow future extension if needed
-        name: Literal[
-            "MEDIATOR", "REQUESTING_PARTY", "RESPONDING_PARTY", "CLERK_SYSTEM"
-        ]
-
-        def __str__(self):
-            return self.name
-
-        def __hash__(self):  # Make it hashable for dict keys if needed
-            return hash(self.name)
-
-        def __eq__(self, other):
-            if isinstance(other, Party):
-                return self.name == other.name
-            return False
-
-    class MediationPhase(BaseModel):
-        name: Literal[
-            "OPENING_STATEMENTS",
-            "JOINT_DISCUSSION_INFO_GATHERING",
-            "CAUCUSES",
-            "NEGOTIATION_BARGAINING",
-            "CONCLUSION_CLOSING_STATEMENTS",
-            "ENDED",  # Terminal phase
-        ]
-
-        def __str__(self):
-            return self.name
-
-        def __hash__(self):
-            return hash(self.name)
-
-        def __eq__(self, other):
-            if isinstance(other, MediationPhase):
-                return self.name == other.name
-            return False
 
     # Define phase instances
     PHASE_OPENING = MediationPhase(name="OPENING_STATEMENTS")
@@ -128,6 +91,9 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     # --- Pydantic Models for State ---
 
     class MediationEvent(BaseModel):
+        """
+        TODO: remove this in favor of using the messages field
+        """
         event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
         timestamp: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
         mediation_phase: MediationPhase
@@ -141,8 +107,12 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
 
         # case state
         case_id: str = Field(default_factory=lambda: "case-" + str(uuid.uuid4())[:8])
+        session_id: str = ""
         case_title: str = ""
         case_summary: str = ""
+
+        # user role - used in interactive mode to determine the role of the user (requesting or responding party)
+        user_role: Optional[Literal["REQUESTING_PARTY", "RESPONDING_PARTY"]] = None
 
         # company names
         requesting_party_company: str = ""
@@ -160,10 +130,10 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         responding_party_opening_statement: str = ""
 
         current_phase: MediationPhase = Field(default=PHASE_OPENING)
-        events: List[MediationEvent] = Field(default_factory=list)
+
+        messages: List[BaseMessage] = Field(default_factory=list)
 
         turn_number: int = 0
-        total_tokens_spoken: int = 0
 
         # For clerk processing
         last_utterance_content: Optional[str] = None
@@ -193,27 +163,6 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         responding_party_conclusion: str = ""
         mediator_conclusion_settlement: str = ""
 
-        agreement_reached: Optional[bool] = None
-        agreement_terms: Optional[str] = None
-
-        # LangGraph messages
-        messages: List[BaseMessage] = Field(default_factory=list)
-
-        # Helper to add a new event based on last utterance
-        def finalize_and_add_event(self, summary: str, token_count: int):
-            if self.last_utterance_content and self.last_utterance_speaker:
-                event = MediationEvent(
-                    mediation_phase=self.current_phase,
-                    speaker=self.last_utterance_speaker,
-                    content=self.last_utterance_content,
-                    summary=summary,
-                    token_count=token_count,
-                )
-                self.events.append(event)
-                self.total_tokens_spoken += token_count
-                self.last_utterance_content = None
-                return event
-            return None
 
     async def initial(state: MediationState):
         """Load the parts of the case data from data_dir based on the case_id that is passed in"""
@@ -237,9 +186,13 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
 
         # Set the company names
         state.requesting_party_company = case_data.get("requesting_party_company", "")
-        state.requesting_party_representative = case_data.get("requesting_party_representative", "")
+        state.requesting_party_representative = case_data.get(
+            "requesting_party_representative", ""
+        )
         state.responding_party_company = case_data.get("responding_party_company", "")
-        state.responding_party_representative = case_data.get("responding_party_representative", "")
+        state.responding_party_representative = case_data.get(
+            "responding_party_representative", ""
+        )
 
         return state
 
@@ -358,17 +311,30 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
                 llm, content, "This is a mediator's default response."
             )
 
+        # strip the content of any whitespace (qwen3 leaves \n\n after </think>)
+        content = content.strip()
+
         # Update state and create event
         state.last_utterance_content = content
 
-        event = MediationEvent(
-            mediation_phase=state.current_phase,
-            speaker=state.last_utterance_speaker,
-            content=content,
-            summary=summary,
-            token_count=len(content.split()),  # Rough estimate of tokens
+        # add the LLM response message to redis memory
+        await memory.add_messages(
+            [
+                HumanMessage(
+                    content=content,
+                    additional_kwargs={
+                        "speaker": "MEDIATOR",
+                        "is_user": False,
+                        "phase": state.current_phase.name,
+                        "summary": summary,
+                    },
+                )
+            ],
+            session_id=state.session_id,
         )
-        state.events.append(event)
+
+        # update the messages in the state
+        state.messages = await memory.get_messages(state.session_id)
 
         return state
 
@@ -420,14 +386,24 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         # Update state and create event
         state.last_utterance_content = content
 
-        event = MediationEvent(
-            mediation_phase=state.current_phase,
-            speaker=state.last_utterance_speaker,
-            content=content,
-            summary=summary,
-            token_count=len(content.split()),  # Rough estimate of tokens
+        # add the LLM response message to redis memory
+        await memory.add_messages(
+            [
+                HumanMessage(
+                    content=content,
+                    additional_kwargs={
+                        "speaker": "REQUESTING_PARTY",
+                        "is_user": False,
+                        "phase": state.current_phase.name,
+                        "summary": summary,
+                    },
+                )
+            ],
+            session_id=state.session_id,
         )
-        state.events.append(event)
+
+        # update the messages in the state
+        state.messages = await memory.get_messages(state.session_id)
 
         return state
 
@@ -478,14 +454,23 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
         # Update state and create event
         state.last_utterance_content = content
 
-        event = MediationEvent(
-            mediation_phase=state.current_phase,
-            speaker=state.last_utterance_speaker,
-            content=content,
-            summary=summary,
-            token_count=len(content.split()),  # Rough estimate of tokens
+        await memory.add_messages(
+            [
+                HumanMessage(
+                    content=content,
+                    additional_kwargs={
+                        "speaker": "RESPONDING_PARTY",
+                        "is_user": False,
+                        "phase": state.current_phase.name,
+                        "summary": summary,
+                    },
+                )
+            ],
+            session_id=state.session_id,
         )
-        state.events.append(event)
+
+        # update the messages in the state
+        state.messages = await memory.get_messages(state.session_id)
 
         return state
 
@@ -495,6 +480,7 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     workflow.add_node("initial", RunnableLambda(initial))
     workflow.add_node("clerk", RunnableLambda(clerk_node))
     workflow.add_node("mediator", RunnableLambda(mediator_node))
+
     workflow.add_node("requesting_party", RunnableLambda(requesting_party_node))
     workflow.add_node("responding_party", RunnableLambda(responding_party_node))
 
@@ -507,12 +493,16 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     workflow.add_edge("requesting_party", "clerk")
     workflow.add_edge("responding_party", "clerk")
 
+
     # Add conditional edge from clerk
     workflow.add_conditional_edges(
         "clerk",
         lambda x: (
             "end"
             if x.current_phase == PHASE_ENDED
+            # route to END if the next speaker is the user
+            or (x.user_role == "REQUESTING_PARTY" and x.next_speaker_candidate.name == "REQUESTING_PARTY")
+            or (x.user_role == "RESPONDING_PARTY" and x.next_speaker_candidate.name == "RESPONDING_PARTY")
             else {
                 "MEDIATOR": "mediator",
                 "REQUESTING_PARTY": "requesting_party",
@@ -529,20 +519,122 @@ async def case_generation_workflow(config: MediationWorkflowConfig, builder: Bui
     async def _response_fn(input_message: str = None) -> str:
         logger.debug("🟢 Starting mediation workflow execution")
 
-        case_id = input_message
-        if not case_id:
-            raise ValueError("Case ID is required, please provide case ID via --input")
+        logger.info("🔍 Input message: %s", input_message)
 
-        # Initialize the state with the required fields
-        initial_state = MediationState(
-            case_id=case_id,
-            events=[],  # Explicitly initialize empty events list
-            case_summary="",  # Initialize empty case summary
-            current_phase=PHASE_OPENING,  # Set initial phase
-            turn_number=0,  # Initialize turn counter
-            total_tokens_spoken=0,  # Initialize token counter
-            turns_in_current_phase=0,  # Initialize phase turn counter
-        )
+        from aiq.builder.context import AIQContext
+        from starlette.datastructures import QueryParams
+
+        aiq_context = AIQContext.get()
+        query_params: QueryParams | None = aiq_context.metadata.query_params
+        path_params: dict[str, str] | None = aiq_context.metadata.path_params
+        method: str | None = aiq_context.metadata.method
+
+        case_id = path_params.get("case_id") if path_params else input_message
+
+        if not case_id:
+            logger.error(
+                "🔴 Case ID is required, please provide case ID via --input when using the mediation workflow"
+            )
+            raise ValueError(
+                "Case ID is required, please provide case ID via --input when using the mediation workflow"
+            )
+        logger.info(f"🔍 Case ID: {case_id}")
+
+        # if using the workflow via CLI, then we start with a fresh state
+        if not method:
+            session_id = str(uuid.uuid4())[:8]
+            initial_state = MediationState(
+                case_id=case_id,
+                session_id=session_id,
+                user_role=None,
+                messages=[],
+                case_summary="",
+                current_phase=PHASE_OPENING,
+                turn_number=0,
+                turns_in_current_phase=0,
+            )
+        elif method == "POST":
+
+            # fetch the state from redis memory
+            case_data = await memory.get_case_state(case_id)
+
+            # fetch the session id from the query params
+            session_id = path_params.get("session_id")
+
+            # there needs to be a session id for the mediation workflow be able to save values
+            if not session_id:
+                logger.error(
+                    "🔴 Session ID is required, please provide session ID via --query when using the mediation workflow"
+                )
+                raise ValueError(
+                    "Session ID is required, please provide session ID via --query when using the mediation workflow"
+                )
+            logger.info(f"🔍 Session ID: {session_id}")
+
+            role = query_params.get("role", "REQUESTING_PARTY")
+
+            # try to get the current session phase from redis memory, otherwise initialize redis values
+            current_phase = await memory.get_session_field(session_id, "current_phase")
+            if not current_phase:
+                current_phase = PHASE_OPENING.name
+                await memory.set_session_field(session_id, "current_phase", current_phase)
+            else:
+                # Decode bytes to string if needed
+                current_phase = current_phase.decode() if isinstance(current_phase, bytes) else current_phase
+
+            current_phase = MediationPhase(name=current_phase)
+
+            # the input_message will be empty on the first request if there are no messages in redis memory
+            # if the input_message is not empty, then we add the user message to redis memory
+            if input_message != "":
+                # add the user message to redis memory
+                await memory.add_messages(
+                    [
+                        HumanMessage(
+                            content=input_message,
+                            additional_kwargs={
+                                "speaker": role,
+                                "is_user": True,
+                                "phase": current_phase.name,
+                            },
+                        )
+                    ],
+                    session_id=session_id,
+                )
+
+            # Set the case summary from the basic case information
+            case_summary = case_data.get("basic_case_information", "")
+            case_title = case_data.get("case_title", "")
+
+            # Set the company names
+            requesting_party_company = case_data.get("requesting_party_company", "")
+            requesting_party_representative = case_data.get(
+                "requesting_party_representative", ""
+            )
+            responding_party_company = case_data.get("responding_party_company", "")
+            responding_party_representative = case_data.get(
+                "responding_party_representative", ""
+            )
+
+            current_phase = case_data.get("current_phase", PHASE_OPENING.name)
+            CURRENT_PHASE = MediationPhase(name=current_phase)
+
+            messages = await memory.get_messages(session_id)
+
+            initial_state = MediationState(
+                case_id=case_id,
+                session_id=session_id,
+                user_role=role,
+                case_summary=case_summary,
+                case_title=case_title,
+                requesting_party_company=requesting_party_company,
+                requesting_party_representative=requesting_party_representative,
+                responding_party_company=responding_party_company,
+                responding_party_representative=responding_party_representative,
+                messages=messages,
+                current_phase=CURRENT_PHASE,
+                turn_number=0,
+            )
 
         # Run the workflow
         output = await app.ainvoke(initial_state, {"recursion_limit": 200})

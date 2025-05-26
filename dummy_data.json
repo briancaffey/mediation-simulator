@@ -1,0 +1,132 @@
+[
+  {
+    "id": "1",
+    "content": "Welcome to the mediation session. I am the mediator and I will be facilitating this discussion.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "opening_statements",
+      "speaker": "MEDIATOR",
+      "is_user": false
+    }
+  },
+  {
+    "id": "2",
+    "content": "Thank you for having us. We are here to discuss the contract dispute.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "opening_statements",
+      "speaker": "REQUESTING_PARTY",
+      "is_user": false
+    }
+  },
+  {
+    "id": "3",
+    "content": "We appreciate the opportunity to resolve this matter.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "opening_statements",
+      "speaker": "RESPONDING_PARTY",
+      "is_user": false
+    }
+  },
+  {
+    "id": "4",
+    "content": "Let's begin by having each party provide their opening statements. We'll start with the requesting party.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "opening_statements",
+      "speaker": "MEDIATOR",
+      "is_user": false
+    }
+  },
+  {
+    "id": "5",
+    "content": "We entered into a contract with the responding party for the development of our software platform. Despite our payments and clear specifications, the delivered product did not meet our requirements. We are seeking compensation for the damages incurred.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "opening_statements",
+      "speaker": "REQUESTING_PARTY",
+      "is_user": false
+    }
+  },
+  {
+    "id": "6",
+    "content": "We acknowledge the contract and our delivery. However, we believe we met all the requirements as specified. The additional features requested were beyond the scope of our agreement and would require additional compensation.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "opening_statements",
+      "speaker": "RESPONDING_PARTY",
+      "is_user": false
+    }
+  },
+  {
+    "id": "7",
+    "content": "Thank you both for your opening statements. Let's move into the information gathering phase. I'd like to understand more about the specific requirements and deliverables.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "information_gathering",
+      "speaker": "MEDIATOR",
+      "is_user": false
+    }
+  },
+  {
+    "id": "8",
+    "content": "The contract specified a complete e-commerce platform with inventory management, user authentication, and payment processing. We provided detailed documentation of these requirements.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "information_gathering",
+      "speaker": "REQUESTING_PARTY",
+      "is_user": false
+    }
+  },
+  {
+    "id": "9",
+    "content": "We implemented all core features as specified. The requesting party later requested additional features like advanced analytics and custom reporting, which were not in the original scope.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "information_gathering",
+      "speaker": "RESPONDING_PARTY",
+      "is_user": false
+    }
+  },
+  {
+    "id": "10",
+    "content": "I see. Let's take a short break and then move into separate caucuses to discuss potential solutions.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "caucuses",
+      "speaker": "MEDIATOR",
+      "is_user": false
+    }
+  },
+  {
+    "id": "11",
+    "content": "During our caucus, we've considered that we might be willing to accept a partial refund if the responding party agrees to implement the core missing features.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "negotiation",
+      "speaker": "REQUESTING_PARTY",
+      "is_user": false
+    }
+  },
+  {
+    "id": "12",
+    "content": "We could consider implementing some of the missing features at a reduced rate, given the circumstances.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "negotiation",
+      "speaker": "RESPONDING_PARTY",
+      "is_user": false
+    }
+  },
+  {
+    "id": "13",
+    "content": "This is a good starting point for negotiation. Let's discuss the specific terms of this potential agreement.",
+    "type": "system",
+    "additional_kwargs": {
+      "phase": "negotiation",
+      "speaker": "MEDIATOR",
+      "is_user": false
+    }
+  }
+]

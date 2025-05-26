@@ -507,7 +507,7 @@ async def case_generation_workflow(
             # Save the prompts to a JSON file
             case_dir = Path(config.data_dir) / state["case_id"]
             prompts_file = case_dir / "image_prompts.json"
-            with open(prompts_file, "w", encoding='utf-8') as f:
+            with open(prompts_file, "w", encoding="utf-8") as f:
                 json.dump(prompts, f, indent=2, ensure_ascii=False)
             logger.info(f"✅ Saved image prompts to {prompts_file}")
 
@@ -604,12 +604,12 @@ async def case_generation_workflow(
 
         # Save the case description to a markdown file
         output_file = case_dir / "initial_case_description.md"
-        with open(output_file, "w", encoding='utf-8') as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             f.write(output)
 
         # Save the documents to a JSON file
         documents_file = case_dir / "documents.json"
-        with open(documents_file, "w", encoding='utf-8') as f:
+        with open(documents_file, "w", encoding="utf-8") as f:
             json.dump(documents, f, indent=2, ensure_ascii=False)
 
         logger.info(f"💾 Saved case description to {output_file}")
@@ -653,7 +653,7 @@ async def case_generation_workflow(
             ],
         }
 
-        logger.info(f"🧠 Saving case state to memory: {state_dict}")
+        logger.info(f"🧠 Saving case state to memory")
         await memory.save_case_state(state_dict, case_id)
 
         with open(state_file, "w", encoding="utf-8") as f:

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Mediation Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .chat-container {
+            height: calc(100vh - 200px);
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        .message-bubble {
+            max-width: 80%;
+        }
+        .user-message {
+            margin-left: auto;
+        }
+        .non-user-message {
+            margin-right: auto;
+        }
+        .message-content {
+            white-space: pre-wrap;
+        }
+        .input-container {
+            position: sticky;
+            bottom: 0;
+            background-color: white;
+            border-top: 1px solid #e5e7eb;
+            z-index: 10;
+        }
+        .case-info-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .case-info-content.expanded {
+            max-height: 500px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <div id="app" class="flex-grow">
+        <!-- Header -->
+        <div class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 mb-4">
+            <div class="max-w-4xl mx-auto px-4">
+                <div class="flex items-center justify-between py-4">
+                    <h1 class="text-2xl font-bold text-white">{{ caseData?.case_title || 'Interactive Mediation Chat' }}</h1>
+                    <button @click="toggleCaseInfo" class="text-white hover:text-gray-200">
+                        <i class="fas" :class="showCaseInfo ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                    </button>
+                </div>
+                <div class="case-info-content" :class="{ 'expanded': showCaseInfo }">
+                    <div class="bg-white rounded-lg p-4 mb-4">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <h3 class="font-semibold text-gray-700">Requesting Party</h3>
+                                <p class="text-gray-600">{{ caseData?.requesting_party_company }}</p>
+                                <p class="text-sm text-gray-500">{{ caseData?.requesting_party_representative }}</p>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-700">Responding Party</h3>
+                                <p class="text-gray-600">{{ caseData?.responding_party_company }}</p>
+                                <p class="text-sm text-gray-500">{{ caseData?.responding_party_representative }}</p>
+                            </div>
+                        </div>
+                        <div v-if="renderedDescription" class="prose prose-sm max-w-none">
+                            <div v-html="renderedDescription"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Container -->
+        <div class="container mx-auto px-4 max-w-4xl flex flex-col h-[calc(100vh-120px)]">
+            <!-- Chat Messages -->
+            <div ref="chatContainer" class="bg-white rounded-lg shadow-lg p-4 mb-4 chat-container">
+                <div v-if="loading" class="text-center text-gray-500 py-4">
+                    <p>Loading messages...</p>
+                </div>
+
+                <div v-else-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <strong class="font-bold">Error!</strong>
+                    <span class="block sm:inline">{{ error }}</span>
+                </div>
+
+                <div v-else class="space-y-4">
+                    <div v-for="message in messages" :key="message.id"
+                         :class="[
+                             'message-bubble p-4 rounded-lg',
+                             message.additional_kwargs?.is_user ? 'user-message bg-blue-100' : 'non-user-message bg-gray-100',
+                             getPhaseColor(message.additional_kwargs?.phase)
+                         ]">
+                        <div class="flex items-start justify-between mb-1">
+                            <span class="font-semibold text-sm" :class="getSpeakerColor(message.additional_kwargs?.speaker)">
+                                {{ message.additional_kwargs?.speaker || 'Unknown' }}
+                            </span>
+                            <span class="text-xs text-gray-500">{{ formatTimestamp(message.id) }}</span>
+                        </div>
+                        <div class="message-content text-gray-800">{{ message.content }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="input-container rounded-lg shadow-lg p-4">
+                <div class="flex items-end gap-2">
+                    <textarea
+                        v-model="newMessage"
+                        @keydown.enter.prevent="handleEnter"
+                        @keydown.meta.enter.prevent="sendMessage"
+                        placeholder="Type your message here..."
+                        class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        rows="3"
+                    ></textarea>
+                    <button
+                        @click="sendMessage"
+                        :disabled="!newMessage.trim()"
+                        class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    loading: true,
+                    error: null,
+                    messages: [],
+                    newMessage: '',
+                    caseId: null,
+                    sessionId: null,
+                    caseData: null,
+                    showCaseInfo: false,
+                    // Color mappings for phases
+                    phaseColors: {
+                        'opening_statements': 'border-l-4 border-purple-500',
+                        'information_gathering': 'border-l-4 border-sky-500',
+                        'caucuses': 'border-l-4 border-indigo-500',
+                        'negotiation': 'border-l-4 border-teal-500',
+                        'conclusion': 'border-l-4 border-pink-500',
+                        'default': 'border-l-4 border-gray-300'
+                    },
+                    // Color mappings for speakers
+                    speakerColors: {
+                        'MEDIATOR': 'text-blue-700',
+                        'REQUESTING_PARTY': 'text-green-700',
+                        'RESPONDING_PARTY': 'text-yellow-700',
+                        'default': 'text-gray-700'
+                    }
+                }
+            },
+            computed: {
+                renderedDescription() {
+                    if (!this.caseData?.initial_case_description) return '';
+                    return marked.parse(this.caseData.initial_case_description);
+                }
+            },
+            methods: {
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const container = this.$refs.chatContainer;
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    });
+                },
+                // Helper method to make API requests
+                async makeApiRequest(url, method = 'GET', body = null) {
+                    const options = {
+                        method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    };
+                    if (body) {
+                        options.body = JSON.stringify(body);
+                    }
+
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                },
+
+                // Initialize a new mediation session by sending an empty message
+                async initializeSession() {
+                    try {
+                        await this.makeApiRequest(
+                            `http://localhost:8000/case/${this.caseId}/session/${this.sessionId}/send`,
+                            'POST',
+                            { input_message: "" }
+                        );
+                        // After initialization, fetch the initial messages
+                        await this.fetchMessages();
+                    } catch (e) {
+                        console.error("Failed to initialize session:", e);
+                        this.error = `Failed to initialize session: ${e.message}`;
+                    }
+                },
+
+                async fetchMessages() {
+                    this.loading = true;
+                    this.error = null;
+
+                    try {
+                        // Get case_id and session_id from URL parameters
+                        const urlParams = new URLSearchParams(window.location.search);
+                        this.caseId = urlParams.get('case_id');
+                        this.sessionId = urlParams.get('session_id');
+
+                        const data = await this.makeApiRequest(
+                            `http://localhost:8000/case/${this.caseId}/session/${this.sessionId}`
+                        );
+
+                        this.messages = data.value?.messages || [];
+
+                        // If this is a new session (no messages), initialize it
+                        if (this.messages.length === 0) {
+                            await this.initializeSession();
+                        }
+                    } catch (e) {
+                        console.error("Failed to load messages:", e);
+                        this.error = `Failed to load messages: ${e.message}`;
+                    } finally {
+                        this.loading = false;
+                        this.scrollToBottom();
+                    }
+                },
+
+                async sendMessage() {
+                    if (!this.newMessage.trim()) return;
+
+                    try {
+                        await this.makeApiRequest(
+                            `http://localhost:8000/case/${this.caseId}/session/${this.sessionId}/send`,
+                            'POST',
+                            { input_message: this.newMessage }
+                        );
+
+                        // Clear the input
+                        this.newMessage = '';
+
+                        // Refresh messages to get the updated list
+                        await this.fetchMessages();
+                    } catch (e) {
+                        console.error("Failed to send message:", e);
+                        this.error = `Failed to send message: ${e.message}`;
+                    }
+                },
+                handleEnter(e) {
+                    if (e.shiftKey) {
+                        // Allow new line
+                        return;
+                    }
+                    this.sendMessage();
+                },
+                getPhaseColor(phase) {
+                    return this.phaseColors[phase] || this.phaseColors.default;
+                },
+                getSpeakerColor(speaker) {
+                    return this.speakerColors[speaker] || this.speakerColors.default;
+                },
+                formatTimestamp(timestamp) {
+                    if (!timestamp) return '';
+                    try {
+                        return new Date(parseInt(timestamp)).toLocaleTimeString();
+                    } catch (e) {
+                        return timestamp;
+                    }
+                },
+                toggleCaseInfo() {
+                    this.showCaseInfo = !this.showCaseInfo;
+                },
+                async fetchCaseData() {
+                    try {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const caseId = urlParams.get('case_id') || 'kqjtpuke';
+                        const response = await fetch(`http://localhost:8000/case/${caseId}`);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const data = await response.json();
+                        this.caseData = data.value;
+                    } catch (e) {
+                        console.error("Failed to load case data:", e);
+                        this.error = `Failed to load case data: ${e.message}`;
+                    }
+                }
+            },
+            async mounted() {
+                await Promise.all([
+                    this.fetchCaseData(),
+                    this.fetchMessages()
+                ]);
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

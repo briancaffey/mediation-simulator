@@ -220,33 +220,32 @@
                         <span class="block sm:inline">{{ error }}</span>
                     </div>
 
-                    <div v-if="!loading && !error && events.length === 0" class="text-center text-gray-500">
-                        <p>No events found in the mediation data.</p>
+                    <div v-if="!loading && !error && messages.length === 0" class="text-center text-gray-500">
+                        <p>No messages found in the mediation data.</p>
                     </div>
 
                     <div class="space-y-6">
-                        <div v-for="event in events" :key="event.event_id"
-                             :class="['rounded-lg shadow-lg overflow-hidden border-l-8', getCardBorderColor(event.mediation_phase), getCardBackgroundColor(event.speaker)]">
+                        <div v-for="message in messages" :key="message.id"
+                             :class="['rounded-lg shadow-lg overflow-hidden border-l-8', getCardBorderColor(message.additional_kwargs?.phase), getCardBackgroundColor(message.additional_kwargs?.speaker)]">
 
                             <div class="p-5">
                                 <div class="flex justify-between items-start mb-2">
                                     <div>
-                                        <p :class="['font-bold text-xl', getSpeakerTextColor(event.speaker)]">{{ formatName(event.speaker) }}</p>
-                                        <p class="text-xs opacity-80">{{ formatName(event.mediation_phase) }}</p>
+                                        <p :class="['font-bold text-xl', getSpeakerTextColor(message.additional_kwargs?.speaker)]">{{ formatName(message.additional_kwargs?.speaker) }}</p>
+                                        <p class="text-xs opacity-80">{{ formatName(message.additional_kwargs?.phase) }}</p>
                                     </div>
-                                    <p class="text-xs opacity-70">{{ formatTimestamp(event.timestamp) }}</p>
+                                    <p class="text-xs opacity-70">{{ formatTimestamp(message.id) }}</p>
                                 </div>
 
                                 <div class="mt-3 text-sm whitespace-pre-wrap"
                                      v-show="showFullText"
-                                     v-html="formatContent(event.content)">
+                                     v-html="formatContent(message.content)">
                                 </div>
 
-                                <div v-if="event.summary" class="mt-4 pt-3 border-t border-opacity-20">
+                                <div v-if="message.additional_kwargs?.summary" class="mt-4 pt-3 border-t border-opacity-20">
                                     <p class="text-xs font-semibold opacity-80 mb-1">Summary:</p>
-                                    <p class="text-xs opacity-90 italic">{{ event.summary }}</p>
+                                    <p class="text-xs opacity-90 italic">{{ message.additional_kwargs.summary }}</p>
                                 </div>
-                                <p class="text-xs opacity-60 mt-3 text-right">Token count: {{ event.token_count }}</p>
                             </div>
                         </div>
                     </div>
@@ -334,7 +333,7 @@
                     loading: true,
                     error: null,
                     rawYamlData: null,
-                    events: [],
+                    messages: [],
                     caseSummary: null,
                     caseTitle: null,
                     isSummaryExpanded: false,
@@ -379,7 +378,7 @@
                             const yamlText = await response.text();
                             this.rawYamlData = jsyaml.load(yamlText);
                             if (this.rawYamlData) {
-                                this.events = this.rawYamlData.events || [];
+                                this.messages = this.rawYamlData.messages || [];
                                 this.caseSummary = this.rawYamlData.case_summary || null;
                                 this.caseTitle = this.rawYamlData.case_title || null;
                             }

@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Optional
 import json
 
 from aiq.builder.builder import Builder
@@ -13,6 +13,7 @@ from redis import Redis
 class RedisMemoryConfig(MemoryBaseConfig, name="redis_memory"):
     connection_url: str
 
+
 @register_memory(config_type=RedisMemoryConfig)
 async def redis_memory(config: RedisMemoryConfig, builder: Builder):
 
@@ -22,7 +23,9 @@ async def redis_memory(config: RedisMemoryConfig, builder: Builder):
             self.redis = Redis.from_url(self._conn_url)
 
         # case generation state management
-        async def save_case_description(self, case_description: str, case_id: str) -> None:
+        async def save_case_description(
+            self, case_description: str, case_id: str
+        ) -> None:
             """
             sets the case description using the <case_id>_case_description as the redis key
             """
@@ -51,14 +54,30 @@ async def redis_memory(config: RedisMemoryConfig, builder: Builder):
             messages = await client.aget_messages()
             if messages is None:
                 return []
-            return json.loads(messages)
+            return messages
+
+        async def set_session_field(self, session_id: str, field: str, value: str) -> None:
+            """
+            sets the session field using the <session_id>_<field> as the redis key
+            """
+            self.redis.set(f"session:{session_id}:{field}", value)
+
+        async def get_session_field(self, session_id: str, field: str) -> Optional[str]:
+            """
+            gets the session field using the <session_id>_<field> as the redis key
+            """
+            return self.redis.get(f"session:{session_id}:{field}")
 
         async def get_client(self, session_id: str) -> RedisChatMessageHistory:
-            conn = RedisChatMessageHistory(session_id=session_id, redis_url=self._conn_url)
+            conn = RedisChatMessageHistory(
+                session_id=session_id, redis_url=self._conn_url
+            )
             return conn
 
         # mediation session state management
-        async def add_messages(self, items: Sequence[BaseMessage], session_id: str) -> None:
+        async def add_messages(
+            self, items: Sequence[BaseMessage], session_id: str
+        ) -> None:
             client = await self.get_client(session_id)
             await client.aadd_messages(items)
 
@@ -71,14 +90,14 @@ async def redis_memory(config: RedisMemoryConfig, builder: Builder):
             client = await self.get_client(session_id)
             client.clear()
 
-
-
         # for implementation of the interface, but not used
         async def add_items(self, items: Sequence[MemoryItem], session_id: str) -> None:
             client = await self.get_client(session_id)
             await client.aadd_messages(items)
 
-        async def remove_items(self, items: Sequence[MemoryItem], session_id: str) -> None:
+        async def remove_items(
+            self, items: Sequence[MemoryItem], session_id: str
+        ) -> None:
             client = await self.get_client(session_id)
             client.remove_messages(items)
 
