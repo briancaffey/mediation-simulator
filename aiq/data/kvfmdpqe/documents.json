@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Supply Agreement 2023-09",
+    "description": "The original contract outlining delivery terms, quality standards, and payment schedules.",
+    "type": "Contract",
+    "filename": "supply-agreement-2023.md"
+  },
+  {
+    "name": "Quality Inspection Report Q4 2023",
+    "description": "NovaTech’s internal assessment of defective components received from Virelia.",
+    "type": "Technical Report",
+    "filename": "quality-inspection-report.md"
+  },
+  {
+    "name": "Email Correspondence – Delay Notice (12/15/2023)",
+    "description": "Virelia’s communication to NovaTech about production delays due to logistics issues.",
+    "type": "Correspondence",
+    "filename": "delay-notice-email.md"
+  },
+  {
+    "name": "Payment Dispute Resolution Summary",
+    "description": "Virelia’s documentation of unpaid invoices from NovaTech, citing contractual penalties.",
+    "type": "Compliance Report",
+    "filename": "payment-dispute-summary.md"
+  }
+]

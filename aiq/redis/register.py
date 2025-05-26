@@ -35,13 +35,13 @@ async def redis_memory(config: RedisMemoryConfig, builder: Builder):
             """
             sets the case state using the <case_id>_case_state as the redis key
             """
-            self.redis.set(f"{case_id}_case_state", json.dumps(case_state))
+            self.redis.set(f"{case_id}:case_state", json.dumps(case_state))
 
         async def get_case_state(self, case_id: str) -> dict:
             """
             gets the case state using the <case_id>_case_state as the redis key as json
             """
-            state = self.redis.get(f"{case_id}_case_state")
+            state = self.redis.get(f"{case_id}:case_state")
             if state is None:
                 return {}
             return json.loads(state)

@@ -1,0 +1,31 @@
+case_id: kvfmdpqe
+session_id: '123478923358'
+case_title: ''
+case_summary: ''
+user_role: REQUESTING_PARTY
+requesting_party_company: ''
+requesting_party_representative: ''
+responding_party_company: ''
+responding_party_representative: ''
+mediator_opening_statement: >-
+  Good afternoon, John Smith and Jane Doe, and thank you for being here today. My name is [Your Name], and I am the mediator facilitating this session. As a neutral third party, my role is to guide this discussion with fairness, objectivity, and respect for both parties’ perspectives. The goal of this mediation is to help us explore ways to resolve the dispute over contract terms and the alleged breach of agreement between your respective organizations. Please remember that this process is voluntary, confidential, and not binding unless a written agreement is reached. I will manage the conversation to ensure everyone has an opportunity to speak, and I encourage you both to approach this with openness and a willingness to find common ground. While we’ll focus on resolving the issues at hand, it’s important to keep in mind that our discussions are meant to foster collaboration rather than confrontation. Let’s work together to identify solutions that meet your needs and move forward constructively.
+requesting_party_opening_statement: ''
+responding_party_opening_statement: ''
+current_phase: OPENING_STATEMENTS
+messages:
+- type: HumanMessage
+  content: >-
+    Good afternoon, John Smith and Jane Doe, and thank you for being here today. My name is [Your Name], and I am the mediator facilitating this session. As a neutral third party, my role is to guide this discussion with fairness, objectivity, and respect for both parties’ perspectives. The goal of this mediation is to help us explore ways to resolve the dispute over contract terms and the alleged breach of agreement between your respective organizations. Please remember that this process is voluntary, confidential, and not binding unless a written agreement is reached. I will manage the conversation to ensure everyone has an opportunity to speak, and I encourage you both to approach this with openness and a willingness to find common ground. While we’ll focus on resolving the issues at hand, it’s important to keep in mind that our discussions are meant to foster collaboration rather than confrontation. Let’s work together to identify solutions that meet your needs and move forward constructively.
+  additional_kwargs:
+    speaker: MEDIATOR
+    is_user: false
+    phase: OPENING_STATEMENTS
+    summary: >-
+      Mediator [Your Name] explains their role as a neutral third party guiding the discussion to resolve the contract dispute between John Smith and Jane Doe, emphasizing fairness, confidentiality, voluntariness, and collaboration to find mutually acceptable solutions.
+turn_number: 0
+last_utterance_speaker: MEDIATOR
+next_speaker_candidate: REQUESTING_PARTY
+turns_in_current_phase: 0
+requesting_party_conclusion: ''
+responding_party_conclusion: ''
+mediator_conclusion_settlement: ''

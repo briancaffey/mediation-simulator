@@ -656,6 +656,7 @@ async def case_generation_workflow(
         logger.info(f"🧠 Saving case state to memory")
         await memory.save_case_state(state_dict, case_id)
 
+        logger.info(f"📁 Saving case state to file")
         with open(state_file, "w", encoding="utf-8") as f:
             yaml.dump(
                 state_dict,

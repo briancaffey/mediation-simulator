@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Supply Agreement (2021)",
+    "description": "The original agreement outlining delivery timelines, quality standards, and penalty clauses.",
+    "type": "contract",
+    "filename": "supply_agreement_2021.md"
+  },
+  {
+    "name": "Delivery Confirmation Email",
+    "description": "An email from Virelia confirming the shipment of components to Aurora on October 15, 2023.",
+    "type": "correspondence",
+    "filename": "delivery_confirmation_email.md"
+  },
+  {
+    "name": "Quality Inspection Report",
+    "description": "A report prepared by an independent third-party auditor assessing the defect rate in Virelia’s shipments.",
+    "type": "technical report",
+    "filename": "quality_inspection_report.md"
+  },
+  {
+    "name": "Termination Notice",
+    "description": "Aurora’s formal notice to Virelia terminating the supply agreement due to breaches of contract.",
+    "type": "legal correspondence",
+    "filename": "termination_notice.md"
+  }
+]
