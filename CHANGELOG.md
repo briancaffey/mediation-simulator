@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.5.0](https://github.com/briancaffey/mediation-simulator/compare/v1.4.0...v1.5.0) (2025-05-27)
+
+
+### Features
+
+* **article:** add article about mediation simulator ([1c9dc3f](https://github.com/briancaffey/mediation-simulator/commit/1c9dc3fda46bf202b3dce6c9779c7f4309e2439a))
+* **interactive:** completed a full interactive mediation session 🎉 ([9f50a82](https://github.com/briancaffey/mediation-simulator/commit/9f50a8292d630990439d34e51c7f2099a8c5b256))
+* **interactive:** interactive mediation simulator working, sometimes getting stuck on info gathering phase ([5ef0e2e](https://github.com/briancaffey/mediation-simulator/commit/5ef0e2eda53507598a7ad8a06860b97c5007cabf))
+* **interactive:** make mediation workflow stateful and compatible with chat api ([0c6312d](https://github.com/briancaffey/mediation-simulator/commit/0c6312da15b4a647df3c4d0621541aa5b224afe2))
+* **links:** add links to blog article ([2ce6e73](https://github.com/briancaffey/mediation-simulator/commit/2ce6e73e9f9489117a4089547b20bc5498415743))
+* **memory:** add redis memory backend and url endpoint for fetching case state ([cd071f0](https://github.com/briancaffey/mediation-simulator/commit/cd071f004d696a10c772daa9fe78b8cf2a0fa6a6))
+* **server:** add routes for mediation session ([5c34f61](https://github.com/briancaffey/mediation-simulator/commit/5c34f61d27fd0799d54c111e00745af123d46e6e))
+* **site:** regenerate mediation cases for website ([41d422a](https://github.com/briancaffey/mediation-simulator/commit/41d422aaa9ad4c2eb1d1d1a952f08fda18bc8ceb))
+* **types:** simplify types ([ffd1df7](https://github.com/briancaffey/mediation-simulator/commit/ffd1df7bed5b8cdc8e6cc233f6c7582fd4582056))
+
+
+### Bug Fixes
+
+* **article:** fix image link ([ec8a43e](https://github.com/briancaffey/mediation-simulator/commit/ec8a43e115de9b80dc36b55c65d6fc7e6d5be8ba))
+
 ## [1.4.0](https://github.com/briancaffey/mediation-simulator/compare/v1.3.0...v1.4.0) (2025-05-23)
 
 
