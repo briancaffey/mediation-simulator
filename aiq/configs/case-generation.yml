@@ -28,8 +28,5 @@ memory:
 
 workflow:
   _type: case_generation
-  # tool_names:
-  #   - document_generation
-  #   - summarization
   llm_name: nim_llm
   data_dir: ./data
