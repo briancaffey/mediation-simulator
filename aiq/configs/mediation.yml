@@ -78,8 +78,8 @@ functions:
     _type: server/get_mediation_case
   get_mediation_session:
     _type: server/get_mediation_session
-  send_message_to_mediation_session:
-    _type: mediation
+  # send_message_to_mediation_session:
+  #   _type: mediation
 
 embedders:
   nv-embedqa-e5-v5:

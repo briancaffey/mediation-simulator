@@ -324,6 +324,36 @@ workflow:
   data_dir: ./data
 ```
 
+I added a lot of logging to my workflow in order to keep an eye on how the workflows progressed. Here's a sample of the logs from the CLI invocation of the mediation simulator program:
+
+```
+12:08:48 mediation.register INFO   ⚖️ [MEDIATOR]: Mediator node called
+12:08:56 mediation.register INFO   👤 [CLERK] Starting clerk node - Phase: JOINT_DISCUSSION_INFO_GATHERING, Turn: 3
+12:08:56 mediation.register INFO   🤔 [CLERK] Using LLM to decide next speaker
+12:09:12 mediation.register INFO   🎯 [CLERK] LLM selected next speaker: RESPONDING_PARTY
+12:09:12 mediation.register INFO   📊 [CLERK] Updated counters - Turn: 4, Phase turns: 4
+12:09:12 mediation.register INFO   🌚 Responding party node called
+12:09:20 mediation.register INFO   👤 [CLERK] Starting clerk node - Phase: JOINT_DISCUSSION_INFO_GATHERING, Turn: 4
+12:09:20 mediation.register INFO   🤔 [CLERK] Using LLM to decide next speaker
+12:09:23 mediation.register INFO   🎯 [CLERK] LLM selected next speaker: REQUESTING_PARTY
+12:09:23 mediation.register INFO   📊 [CLERK] Updated counters - Turn: 5, Phase turns: 5
+12:09:23 mediation.register INFO   🌝 Requesting party node called
+12:09:31 mediation.register INFO   👤 [CLERK] Starting clerk node - Phase: JOINT_DISCUSSION_INFO_GATHERING, Turn: 5
+12:09:31 mediation.register INFO   ⏰ [CLERK] Max turns (5) reached for current phase
+12:09:31 mediation.register INFO   🔄 [CLERK] Transitioning from joint discussion to negotiation
+12:09:31 mediation.register INFO   👨‍⚖️ [CLERK] Mediator will start the new phase
+12:09:31 mediation.register INFO   ⚖️ [MEDIATOR]: Mediator node called
+12:09:40 mediation.register INFO   👤 [CLERK] Starting clerk node - Phase: NEGOTIATION_BARGAINING, Turn: 5
+12:09:40 mediation.register INFO   🤔 [CLERK] Using LLM to decide next speaker
+12:09:48 mediation.register INFO   🎯 [CLERK] LLM selected next speaker: REQUESTING_PARTY
+12:09:48 mediation.register INFO   📊 [CLERK] Updated counters - Turn: 6, Phase turns: 1
+12:09:48 mediation.register INFO   🌝 Requesting party node called
+12:09:56 mediation.register INFO   👤 [CLERK] Starting clerk node - Phase: NEGOTIATION_BARGAINING, Turn: 6
+12:09:56 mediation.register INFO   🤔 [CLERK] Using LLM to decide next speaker
+12:09:58 mediation.register INFO   🎯 [CLERK] LLM selected next speaker: RESPONDING_PARTY
+12:09:58 mediation.register INFO   📊 [CLERK] Updated counters - Turn: 7, Phase turns: 2
+```
+
 Config files can be as simple or as complex as they need to be depending on your workflow.
 
 The AgentIQ Toolkit is doing something really valuable by bringing patterns and components from these (and other) frameworks into a cohesive system. This allows for some truly interesting and powerful combinations. The examples provided are excellent and taught me a lot about new patterns for building agentic workflows. ReWOO agents, for instance, were a new concept for me, as was seeing how to effectively combine LangGraph with LlamaIndex.

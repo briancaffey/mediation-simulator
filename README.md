@@ -23,8 +23,10 @@ This project requires Python 3.11 or 3.12 and `uv`, it has been tested on MacOS 
 
 - Milvus vector store for indexing case documents
 - Phoenix for telemetry and tracing
+- Redis for AIQ memory backend
 - An NVIDIA API key or a local LLM supporting the OpenAI API and tool calling
 - Install `graphviz` for generating the LangGraph workflow diagrams
+- Follow instructions in [/aiq/README.md](/aiq/README.md) for instructions on setting up a virtual environment and installing dependencies
 
 ## Set up Milvus with docker compose
 
@@ -44,7 +46,15 @@ docker compose -f docker-compose.phoenix.yml up
 
 The URL for Phoenix is `http://localhost:6006`, this is used in the Agent Intelligence Toolkit configuration files.
 
-## Image generation and TTS
+## Redis Stack for AIQ Memory backend
+
+Run the following command to set start redis stack. Note: this compose file uses `redis/redis-stack` which is different from the core redis distribution. Redis Stack has advanced capabilities that are required for the backend to work:
+
+```
+docker compose -f docker-compose.redis.yml up
+```
+
+### Image generation and TTS
 
 Flux and Dia are used for image and voice generation but they are not required for the project to run.
 
@@ -52,7 +62,7 @@ Flux and Dia are used for image and voice generation but they are not required f
 
 NVIDIA Agent Intelligence Toolkit code is located in [aiq/](aiq/). See the [README](aiq/README.md) in this directory for detailed instructions on how to set up an environment and install dependencies.
 
-## Case Generation
+### Case Generation
 
 Case generation runs the following workflow:
 
@@ -114,7 +124,7 @@ You can review the case information in the directory `aiq/data/{case_id}/`. You 
 - case_generation_state.yaml
 - documents/
 
-## Indexing the documents
+### Indexing the documents
 
 To index documents for all cases, run the following command from the `aiq` directory with the virtual environment activated:
 
@@ -122,9 +132,20 @@ To index documents for all cases, run the following command from the `aiq` direc
 python index.py
 ```
 
-## Simulating Mediation for a Case
+Note: Mediation Simulator currently does not make use of document retrieval, but the code I used to try to make this work is included in the repo.
+
+### Simulating Mediation for a Case
 
 Simulating mediation for a case is done by running the following command from the `aiq` directory with the virtual environment activated:
+
+Note: before running the following command you need to comment out the following section of the config file in `mediation.yml`:
+
+```
+  # send_message_to_mediation_session:
+  #   _type: mediation
+```
+
+This is likely due to the fact that I'm using a workflow for handling an API route. I this is not commented out, you may see an error about AIQ not being able to find the llm.
 
 ```
 aiq run --config_file configs/mediation.yml --input "{case_id}"
@@ -207,6 +228,42 @@ python3 -m http.server 8083
 ```
 
 Then visit [http://[::]:8083/?case_id={case_id}](http://[::]:8083/?case_id={case_id}) to view mediation dialog produced by the workflow.
+
+
+## Mediation Simulator Interactive
+
+To start an interactive mediation session you need to first generate a mediation case use the case generation workflow (described earlier):
+
+```
+aiq run --config_file configs/case-generation.yml --input ""
+```
+
+Grab the case_id from the "Workflow Result" in the output of this command:
+
+```bash
+Workflow Result:
+['jvaultju']
+```
+
+Then you can can run the following command from the `aiq` directory:
+
+```bash
+aiq serve --config_file configs/mediation.yml
+```
+
+To bring up the UI you can run the following command from the root of the project:
+
+```bash
+python3 -m http.server 8083
+```
+
+Then you can can you start an interactive session by entering the following:
+
+[http://localhost:8083/?case_id={case_id}&session_id={session_id}](#)
+
+`case_id` should be the case_id for the mediation case that you have generated above, and session_id can be any value (e.g. `jvaultju`). You can generate any number of mediation sessions for a given `case_id` by launching visitng the above URL with a valid `case_id` and a different `session_id`.
+
+![Mediation Simulator Interactive Session](/static/mediation-simulator/interactive_mediation_screenshot.png)
 
 ## Image Generation with Flux
 

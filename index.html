@@ -377,10 +377,21 @@
                             }
                             const yamlText = await response.text();
                             this.rawYamlData = jsyaml.load(yamlText);
+
+                            // Log the data for debugging
+                            console.log('Loaded YAML data:', this.rawYamlData);
+
                             if (this.rawYamlData) {
                                 this.messages = this.rawYamlData.messages || [];
                                 this.caseSummary = this.rawYamlData.case_summary || null;
                                 this.caseTitle = this.rawYamlData.case_title || null;
+
+                                // Log the extracted values
+                                console.log('Messages:', this.messages);
+                                console.log('Case Summary:', this.caseSummary);
+                                console.log('Case Title:', this.caseTitle);
+                            } else {
+                                throw new Error('No data found in YAML file');
                             }
                         } else {
                             // Fetch all cases
@@ -391,10 +402,17 @@
                             const yamlText = await response.text();
                             const data = jsyaml.load(yamlText);
                             this.cases = data.cases || [];
+
+                            // Log the cases data
+                            console.log('Loaded cases:', this.cases);
                         }
                     } catch (e) {
                         console.error("Failed to load data:", e);
                         this.error = `Failed to load data: ${e.message}`;
+                        // Set default values when there's an error
+                        this.messages = [];
+                        this.caseSummary = null;
+                        this.caseTitle = null;
                     } finally {
                         this.loading = false;
                     }
