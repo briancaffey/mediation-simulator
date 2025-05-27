@@ -70,6 +70,8 @@ Case generation runs the following workflow:
 
 ![case_generation_workflow](aiq/case_generation_workflow.png)
 
+Note: you will need to adjust the `llm` section of the `case-generation.yml` depending on where your LLM is hosted.
+
 Generating a case is done by running the following command:
 
 ```bash
@@ -139,6 +141,8 @@ Note: Mediation Simulator currently does not make use of document retrieval, but
 ### Simulating Mediation for a Case
 
 Simulating mediation for a case is done by running the following command from the `aiq` directory with the virtual environment activated:
+
+Note: you will need to adjust the `llm` section of the `mediation.yml` depending on where your LLM is hosted.
 
 Note: before running the following command you need to comment out the following section of the config file in `mediation.yml`:
 
