@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/briancaffey/mediation-simulator/compare/v1.5.0...v1.5.1) (2025-05-27)
+
+
+### Bug Fixes
+
+* **readme:** fix instructions for readme ([1893a4a](https://github.com/briancaffey/mediation-simulator/commit/1893a4a83fe749ece3f3847122336a2a126856ad))
+
 ## [1.5.0](https://github.com/briancaffey/mediation-simulator/compare/v1.4.0...v1.5.0) (2025-05-27)
 
 
