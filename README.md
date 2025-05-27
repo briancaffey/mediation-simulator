@@ -2,6 +2,8 @@
 
 [𝕏 Post](https://x.com/briancaffey/status/1926036369597510117)
 
+[My blog article about Mediation Simulator](https://briancaffey.github.io/2025/05/27/mediation-simulator-project-for-nvidia-agent-intelligence-toolkit)
+
 Mediation Simulator helps develop your mediation skills, powered by NVIDIA Agent Intelligence Toolkit. This project is my submission for the [NVIDIA Agent Intelligence Toolkit Hackathon](https://developer.nvidia.com/agentiq-hackathon).
 
 Mediation is a process where two parties in a dispute come together to resolve their differences. It is a process that is often used in business disputes, but it can be used in other disputes as well. This project was modeled after academic mediation competitions for law school students. The goal of these competitions is to simulate a mediation process and to help law students develop their mediation skills. These competitions use fictional case information and the students assume either the role or the requesting party or the role of the responding party.

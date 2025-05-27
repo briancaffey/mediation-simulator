@@ -1,8 +1,10 @@
-## AI in the (Mock) Courtroom: Building Mediation Simulator for the NVIDIA Agent Intelligence Toolkit Hackathon!
+
+
+# Building Mediation Simulator for the NVIDIA Agent Intelligence Toolkit Hackathon!
 
 I'm excited to share a project I've been building for the NVIDIA Agent Intelligence Toolkit Hackathon: **Mediation Simulator**! The NVIDIA Agent Intelligence Toolkit (or AgentIQ Toolkit, as it's often called) is a powerful open-source library designed for connecting, evaluating, and accelerating teams of AI agents. My goal? To see if I could leverage this toolkit to build AI agent teams capable of simulating the entire, complex process of a law school mediation competition.
 
-### What is Mediation Simulator? And Why Mediation?
+## What is Mediation Simulator? And Why Mediation?
 
 At its core, Mediation Simulator is my attempt to model the nuanced, semi-structured, three-way conversations that happen in mediation. Law school mediation tournaments are events where students practice negotiation and dispute resolution skills. This seemed like a really interesting challenge! How do you get language models to effectively navigate such a dynamic environment?
 
