@@ -244,7 +244,7 @@ async def redis_memory(config: RedisMemoryConfig, builder: Builder):
 
 I found that LangChain has a `RedisChatMessageHistory` class that made putting this backend together almost trivial. Redis Stack also ships with a web viewer which really came in handy for debugging my memory backend:
 
-![Reis Memory Backend](/static/mediation-simualtor/redis.png)
+![Reis Memory Backend](/static/mediation-simulator/redis.png)
 
 For storing other types of data, I was able to implement my own methods and store things like case data or other metadata for a mediation simulator session for things like current_speaker, number of session, current session, etc. I love Redis! The setup is also really easy, I just added a docker compose file:
 
